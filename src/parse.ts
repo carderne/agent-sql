@@ -2,6 +2,9 @@ import type {
   ASTNode,
   Alias,
   ArithOp,
+  CaseExpr,
+  CaseWhen,
+  CastExpr,
   Column,
   ColumnExpr,
   ColumnRef,
@@ -612,6 +615,58 @@ semantics.addOperation<ASTNode>("toAST()", {
       type: "where_unary_minus",
       expr: expr.toAST() as WhereValue,
     } satisfies WhereUnaryMinus as ASTNode;
+  },
+
+  AtomExpr_case(caseExpr) {
+    return caseExpr.toAST();
+  },
+
+  AtomExpr_cast(castExpr) {
+    return castExpr.toAST();
+  },
+
+  CaseExpr_simple(_case, subject, whens, elseClause, _end) {
+    return {
+      type: "case_expr",
+      subject: subject.toAST() as WhereValue,
+      whens: whens.children.map((w) => w.toAST() as CaseWhen),
+      else: elseClause.children.length > 0 ? (elseClause.children[0].toAST() as WhereValue) : null,
+    } satisfies CaseExpr as ASTNode;
+  },
+
+  CaseExpr_searched(_case, whens, elseClause, _end) {
+    return {
+      type: "case_expr",
+      subject: null,
+      whens: whens.children.map((w) => w.toAST() as CaseWhen),
+      else: elseClause.children.length > 0 ? (elseClause.children[0].toAST() as WhereValue) : null,
+    } satisfies CaseExpr as ASTNode;
+  },
+
+  SimpleWhenClause(_when, cond, _then, result) {
+    return {
+      condition: cond.toAST() as WhereValue,
+      result: result.toAST() as WhereValue,
+    } as unknown as ASTNode;
+  },
+
+  SearchedWhenClause(_when, cond, _then, result) {
+    return {
+      condition: cond.toAST() as WhereValue,
+      result: result.toAST() as WhereValue,
+    } as unknown as ASTNode;
+  },
+
+  ElseClause(_else, val) {
+    return val.toAST();
+  },
+
+  CastExpr(_cast, _open, expr, _as, typeName, _close) {
+    return {
+      type: "cast_expr",
+      expr: expr.toAST() as WhereValue,
+      typeName: typeName.sourceString,
+    } satisfies CastExpr as ASTNode;
   },
 
   AtomExpr_func(funcCall) {

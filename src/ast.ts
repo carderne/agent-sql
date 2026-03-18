@@ -193,6 +193,24 @@ export interface WhereUnaryMinus {
   expr: WhereValue;
 }
 
+export interface CaseWhen {
+  condition: WhereValue;
+  result: WhereValue;
+}
+
+export interface CaseExpr {
+  readonly type: "case_expr";
+  subject: WhereValue | null; // null = searched CASE, non-null = simple CASE
+  whens: CaseWhen[];
+  else: WhereValue | null;
+}
+
+export interface CastExpr {
+  readonly type: "cast_expr";
+  expr: WhereValue;
+  typeName: string;
+}
+
 export type WhereValue =
   | { readonly type: "where_value"; kind: "string"; value: string }
   | { readonly type: "where_value"; kind: "integer"; value: number }
@@ -202,7 +220,9 @@ export type WhereValue =
   | { readonly type: "where_value"; kind: "column_ref"; ref: ColumnRef }
   | { readonly type: "where_value"; kind: "func_call"; func: FuncCall }
   | WhereArith
-  | WhereUnaryMinus;
+  | WhereUnaryMinus
+  | CaseExpr
+  | CastExpr;
 
 export interface WhereComparison {
   readonly type: "where_comparison";

@@ -196,7 +196,7 @@ Tracking PostgreSQL SQL feature coverage in `src/sql.ohm` / `src/ast.ts`.
 ## Identifiers & Quoting
 
 - [x] Unquoted identifiers
-- [ ] Double-quoted identifiers (`"My Table"`)
+- [x] Double-quoted identifiers (`"My Table"`)
 - [ ] Case-insensitive keyword matching (partial — only keywords defined in grammar)
 - [ ] Schema-qualified identifiers beyond two levels (catalog.schema.table)
 

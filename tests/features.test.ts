@@ -53,6 +53,24 @@ test("CROSS JOIN and NATURAL JOIN", () => {
   expect(ast.joins[1]).toMatchObject({ type: "join", joinType: "natural", condition: null });
 });
 
+// --- CASE WHEN and CAST ---
+
+test("CASE WHEN THEN ELSE END (searched)", () => {
+  const sql =
+    "SELECT CASE WHEN status = 'active' THEN 1 WHEN status = 'pending' THEN 2 ELSE 0 END FROM t";
+  expect(outputSql(parseSql(sql))).toBe(sql);
+});
+
+test("CASE expr WHEN ... (simple form)", () => {
+  const sql = "SELECT CASE status WHEN 'active' THEN 1 ELSE 0 END FROM t";
+  expect(outputSql(parseSql(sql))).toBe(sql);
+});
+
+test("CAST expression", () => {
+  const sql = "SELECT CAST(price AS numeric(10, 2)), CAST(created_at AS date) FROM orders";
+  expect(outputSql(parseSql(sql))).toBe(sql);
+});
+
 // --- Double-quoted identifiers ---
 
 test("double-quoted identifiers in SELECT and FROM", () => {
