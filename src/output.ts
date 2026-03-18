@@ -1,6 +1,8 @@
 import type {
   ASTNode,
   Alias,
+  CaseExpr,
+  CastExpr,
   Column,
   ColumnExpr,
   ColumnRef,
@@ -105,6 +107,10 @@ function r(node: ASTNode | Terminal): string {
       return handleWhereArith(node);
     case "where_unary_minus":
       return handleWhereUnaryMinus(node);
+    case "case_expr":
+      return handleCaseExpr(node);
+    case "cast_expr":
+      return handleCastExpr(node);
     case "where_value":
       return handleWhereValue(node as Extract<WhereValue, { type: "where_value" }>);
     case "column":
@@ -235,6 +241,17 @@ function handleWhereBetween(node: WhereBetween): string {
 function handleWhereIn(node: WhereIn): string {
   const list = node.list.map((v) => r(v)).join(", ");
   return `${r(node.expr)}${node.not ? " NOT" : ""} IN (${list})`;
+}
+
+function handleCaseExpr(node: CaseExpr): string {
+  const subject = node.subject ? ` ${r(node.subject)}` : "";
+  const whens = node.whens.map((w) => `WHEN ${r(w.condition)} THEN ${r(w.result)}`).join(" ");
+  const elseStr = node.else ? ` ELSE ${r(node.else)}` : "";
+  return `CASE${subject} ${whens}${elseStr} END`;
+}
+
+function handleCastExpr(node: CastExpr): string {
+  return `CAST(${r(node.expr)} AS ${node.typeName})`;
 }
 
 function handleWhereArith(node: WhereArith): string {

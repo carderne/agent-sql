@@ -302,6 +302,8 @@ export interface SQLActionDict<T> extends BaseActionDict<T> {
   MulExpr?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   UnaryExpr_neg?: (this: NonterminalNode, arg0: TerminalNode, arg1: NonterminalNode) => T;
   UnaryExpr?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  AtomExpr_case?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  AtomExpr_cast?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   AtomExpr_func?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   AtomExpr_paren?: (
     this: NonterminalNode,
@@ -316,6 +318,56 @@ export interface SQLActionDict<T> extends BaseActionDict<T> {
   AtomExpr_null?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   AtomExpr_columnRef?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   AtomExpr?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  CaseExpr_simple?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: NonterminalNode,
+    arg2: IterationNode,
+    arg3: IterationNode,
+    arg4: NonterminalNode,
+  ) => T;
+  CaseExpr_searched?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: IterationNode,
+    arg2: IterationNode,
+    arg3: NonterminalNode,
+  ) => T;
+  CaseExpr?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  SimpleWhenClause?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: NonterminalNode,
+    arg2: NonterminalNode,
+    arg3: NonterminalNode,
+  ) => T;
+  SearchedWhenClause?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: NonterminalNode,
+    arg2: NonterminalNode,
+    arg3: NonterminalNode,
+  ) => T;
+  ElseClause?: (this: NonterminalNode, arg0: NonterminalNode, arg1: NonterminalNode) => T;
+  CastExpr?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: TerminalNode,
+    arg2: NonterminalNode,
+    arg3: NonterminalNode,
+    arg4: NonterminalNode,
+    arg5: TerminalNode,
+  ) => T;
+  TypeName?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: IterationNode,
+    arg2: IterationNode,
+    arg3: IterationNode,
+    arg4: IterationNode,
+    arg5: IterationNode,
+    arg6: IterationNode,
+  ) => T;
   ColumnRef_qualified?: (
     this: NonterminalNode,
     arg0: NonterminalNode,
@@ -409,6 +461,12 @@ export interface SQLActionDict<T> extends BaseActionDict<T> {
   like?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   ilike?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   unknown?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  case?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  when?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  then?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  else?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  end_kw?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  cast?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   keyword?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   identPart?: (this: NonterminalNode, arg0: NonterminalNode | TerminalNode) => T;
   space?: (this: NonterminalNode, arg0: NonterminalNode | TerminalNode) => T;
