@@ -10,3 +10,12 @@ export function sqyrl(expr: string, whereGuard: WhereGuard): string {
   const res = outputSql(san);
   return res;
 }
+
+export function makeSqyrl(whereGuard: WhereGuard): (expr: string) => string {
+  return (expr: string) => {
+    const ast = parseSql(expr);
+    const san = sanitiseSql(ast, whereGuard);
+    const res = outputSql(san);
+    return res;
+  };
+}
