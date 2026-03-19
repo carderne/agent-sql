@@ -68,7 +68,7 @@ semantics.addOperation<ASTNode>("toAST()", {
     offsetClause,
   ) {
     const distinct: Distinct | null =
-      distinctOpt.children.length > 0 ? (distinctOpt.children[0].toAST() as Distinct) : null;
+      distinctOpt.children.length > 0 ? (distinctOpt.children[0]!.toAST() as Distinct) : null;
     const cols = columns.toAST() as Column[];
     const from: SelectFrom = {
       type: "select_from",
@@ -78,24 +78,24 @@ semantics.addOperation<ASTNode>("toAST()", {
     const whereIter = whereClause.children;
     const where: WhereRoot | null =
       whereIter.length > 0
-        ? { type: "where_root", inner: whereIter[0].toAST() as WhereExpr }
+        ? { type: "where_root", inner: whereIter[0]!.toAST() as WhereExpr }
         : null;
     const groupBy: GroupByClause | null =
       groupByClause.children.length > 0
-        ? (groupByClause.children[0].toAST() as GroupByClause)
+        ? (groupByClause.children[0]!.toAST() as GroupByClause)
         : null;
     const having: HavingClause | null =
-      havingClause.children.length > 0 ? (havingClause.children[0].toAST() as HavingClause) : null;
+      havingClause.children.length > 0 ? (havingClause.children[0]!.toAST() as HavingClause) : null;
     const orderBy: OrderByClause | null =
       orderByClause.children.length > 0
-        ? (orderByClause.children[0].toAST() as OrderByClause)
+        ? (orderByClause.children[0]!.toAST() as OrderByClause)
         : null;
     const limitIter = limitClause.children;
     const limit: LimitClause | null =
-      limitIter.length > 0 ? { type: "limit", value: limitIter[0].toAST() as number } : null;
+      limitIter.length > 0 ? { type: "limit", value: limitIter[0]!.toAST() as number } : null;
     const offsetIter = offsetClause.children;
     const offset: OffsetClause | null =
-      offsetIter.length > 0 ? { type: "offset", value: offsetIter[0].toAST() as number } : null;
+      offsetIter.length > 0 ? { type: "offset", value: offsetIter[0]!.toAST() as number } : null;
 
     return {
       type: "select",
@@ -268,10 +268,10 @@ semantics.addOperation<ASTNode>("toAST()", {
       expr: expr.toAST() as WhereValue,
     };
     if (direction.children.length > 0) {
-      item.direction = direction.children[0].toAST() as SortDirection;
+      item.direction = direction.children[0]!.toAST() as SortDirection;
     }
     if (nullsOrder.children.length > 0) {
-      item.nulls = nullsOrder.children[0].toAST() as NullsOrder;
+      item.nulls = nullsOrder.children[0]!.toAST() as NullsOrder;
     }
     return item as ASTNode;
   },
@@ -610,7 +610,7 @@ semantics.addOperation<ASTNode>("toAST()", {
       type: "case_expr",
       subject: subject.toAST() as WhereValue,
       whens: whens.children.map((w) => w.toAST() as CaseWhen),
-      else: elseClause.children.length > 0 ? (elseClause.children[0].toAST() as WhereValue) : null,
+      else: elseClause.children.length > 0 ? (elseClause.children[0]!.toAST() as WhereValue) : null,
     } satisfies CaseExpr as ASTNode;
   },
 
@@ -619,7 +619,7 @@ semantics.addOperation<ASTNode>("toAST()", {
       type: "case_expr",
       subject: null,
       whens: whens.children.map((w) => w.toAST() as CaseWhen),
-      else: elseClause.children.length > 0 ? (elseClause.children[0].toAST() as WhereValue) : null,
+      else: elseClause.children.length > 0 ? (elseClause.children[0]!.toAST() as WhereValue) : null,
     } satisfies CaseExpr as ASTNode;
   },
 

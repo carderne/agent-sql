@@ -23,6 +23,26 @@ const queries: Query[] = [
     `,
     expectPassSan: true,
   },
+  {
+    name: "join-follows-graph",
+    sql: `
+    select *
+    from organization
+    join "user" on organization.id = "user".organization_id
+    join message on message.user_id = user.id
+    `,
+    expectPassSan: true,
+  },
+  {
+    name: "join-doesnot-follow-graph",
+    sql: `
+    select *
+    from message
+    join user on user.id = message.user_id
+    join organization on organization.id = user.organization_id
+    `,
+    expectPassSan: true,
+  },
 ];
 
 const singleQuery: Query = {

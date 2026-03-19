@@ -8,7 +8,7 @@ import { outputSql } from "../src/output";
 test("WHERE with inequality operators output", () => {
   const sql = "SELECT id FROM orders WHERE amount >= 100 AND status <> 'cancelled'";
   expect(outputSql(parseSql(sql).unwrap())).toBe(
-    "SELECT id FROM orders WHERE (amount >= 100 AND status <> 'cancelled')",
+    `SELECT "id" FROM "orders" WHERE ("amount" >= 100 AND "status" <> 'cancelled')`,
   );
 });
 
@@ -17,25 +17,31 @@ test("WHERE with inequality operators output", () => {
 test("WHERE NOT and IS NULL output", () => {
   const sql = "SELECT id FROM users WHERE NOT active = TRUE AND deleted_at IS NULL";
   expect(outputSql(parseSql(sql).unwrap())).toBe(
-    "SELECT id FROM users WHERE (NOT active = TRUE AND deleted_at IS NULL)",
+    `SELECT "id" FROM "users" WHERE (NOT "active" = TRUE AND "deleted_at" IS NULL)`,
   );
 });
 
 test("IS NOT NULL round-trip", () => {
   const sql = "SELECT id FROM users WHERE email IS NOT NULL";
-  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
+    `SELECT "id" FROM "users" WHERE "email" IS NOT NULL`,
+  );
 });
 
 // --- JOINs ---
 
 test("INNER JOIN with ON condition output", () => {
   const sql = "SELECT u.id, o.total FROM users AS u INNER JOIN orders AS o ON u.id = o.user_id";
-  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
+    `SELECT "u"."id", "o"."total" FROM "users" AS u INNER JOIN "orders" AS o ON "u"."id" = "o"."user_id"`,
+  );
 });
 
 test("LEFT JOIN with USING output", () => {
   const sql = "SELECT a.id, b.name FROM a LEFT JOIN b USING (id)";
-  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
+    `SELECT "a"."id", "b"."name" FROM "a" LEFT JOIN "b" USING (id)`,
+  );
 });
 
 test("multiple JOINs parse to correct join types", () => {
@@ -58,17 +64,23 @@ test("CROSS JOIN and NATURAL JOIN", () => {
 test("CASE WHEN THEN ELSE END (searched)", () => {
   const sql =
     "SELECT CASE WHEN status = 'active' THEN 1 WHEN status = 'pending' THEN 2 ELSE 0 END FROM t";
-  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
+    `SELECT CASE WHEN "status" = 'active' THEN 1 WHEN "status" = 'pending' THEN 2 ELSE 0 END FROM "t"`,
+  );
 });
 
 test("CASE expr WHEN ... (simple form)", () => {
   const sql = "SELECT CASE status WHEN 'active' THEN 1 ELSE 0 END FROM t";
-  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
+    `SELECT CASE "status" WHEN 'active' THEN 1 ELSE 0 END FROM "t"`,
+  );
 });
 
 test("CAST expression", () => {
   const sql = "SELECT CAST(price AS numeric(10, 2)), CAST(created_at AS date) FROM orders";
-  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
+    `SELECT CAST("price" AS numeric(10, 2)), CAST("created_at" AS date) FROM "orders"`,
+  );
 });
 
 // --- Double-quoted identifiers ---
@@ -89,14 +101,14 @@ test("double-quoted identifiers in SELECT and FROM", () => {
 test("arithmetic in SELECT and WHERE", () => {
   const sql = "SELECT price * quantity FROM orders WHERE price * quantity > 100";
   expect(outputSql(parseSql(sql).unwrap())).toBe(
-    "SELECT (price * quantity) FROM orders WHERE (price * quantity) > 100",
+    `SELECT ("price" * "quantity") FROM "orders" WHERE ("price" * "quantity") > 100`,
   );
 });
 
 test("string concatenation and unary minus", () => {
   const sql = "SELECT fname || ' ' || lname FROM t WHERE -score < -10";
   expect(outputSql(parseSql(sql).unwrap())).toBe(
-    "SELECT ((fname || ' ') || lname) FROM t WHERE -score < -10",
+    `SELECT (("fname" || ' ') || "lname") FROM "t" WHERE -"score" < -10`,
   );
 });
 
@@ -105,7 +117,7 @@ test("string concatenation and unary minus", () => {
 test("BETWEEN and NOT BETWEEN", () => {
   const sql = "SELECT id FROM t WHERE age BETWEEN 18 AND 65 AND score NOT BETWEEN 0 AND 50";
   expect(outputSql(parseSql(sql).unwrap())).toBe(
-    "SELECT id FROM t WHERE (age BETWEEN 18 AND 65 AND score NOT BETWEEN 0 AND 50)",
+    `SELECT "id" FROM "t" WHERE ("age" BETWEEN 18 AND 65 AND "score" NOT BETWEEN 0 AND 50)`,
   );
 });
 
@@ -113,21 +125,21 @@ test("IN list and NOT IN list", () => {
   const sql =
     "SELECT id FROM t WHERE status IN ('active', 'pending') AND role NOT IN ('admin', 'root')";
   expect(outputSql(parseSql(sql).unwrap())).toBe(
-    "SELECT id FROM t WHERE (status IN ('active', 'pending') AND role NOT IN ('admin', 'root'))",
+    `SELECT "id" FROM "t" WHERE ("status" IN ('active', 'pending') AND "role" NOT IN ('admin', 'root'))`,
   );
 });
 
 test("LIKE and NOT LIKE", () => {
   const sql = "SELECT id FROM t WHERE name LIKE '%foo%' AND email NOT LIKE '%bar%'";
   expect(outputSql(parseSql(sql).unwrap())).toBe(
-    "SELECT id FROM t WHERE (name LIKE '%foo%' AND email NOT LIKE '%bar%')",
+    `SELECT "id" FROM "t" WHERE ("name" LIKE '%foo%' AND "email" NOT LIKE '%bar%')`,
   );
 });
 
 test("IS TRUE / IS FALSE / IS UNKNOWN", () => {
   const sql = "SELECT id FROM t WHERE active IS TRUE AND deleted IS NOT FALSE AND flag IS UNKNOWN";
   expect(outputSql(parseSql(sql).unwrap())).toBe(
-    "SELECT id FROM t WHERE ((active IS TRUE AND deleted IS NOT FALSE) AND flag IS UNKNOWN)",
+    `SELECT "id" FROM "t" WHERE (("active" IS TRUE AND "deleted" IS NOT FALSE) AND "flag" IS UNKNOWN)`,
   );
 });
 
@@ -136,19 +148,21 @@ test("IS TRUE / IS FALSE / IS UNKNOWN", () => {
 test("function calls in SELECT and WHERE", () => {
   const sql =
     "SELECT count(*), lower(name), coalesce(email, 'none') FROM users WHERE length(name) > 3";
-  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
+    `SELECT count(*), lower("name"), coalesce("email", 'none') FROM "users" WHERE length("name") > 3`,
+  );
 });
 
 test("aggregate with DISTINCT", () => {
   const sql = "SELECT count(DISTINCT user_id) FROM events";
-  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(`SELECT count(DISTINCT "user_id") FROM "events"`);
 });
 
 // --- DISTINCT ---
 
 test("SELECT DISTINCT output", () => {
   const sql = "SELECT DISTINCT status FROM orders";
-  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(`SELECT DISTINCT "status" FROM "orders"`);
 });
 
 // --- GROUP BY / HAVING ---
@@ -156,7 +170,9 @@ test("SELECT DISTINCT output", () => {
 test("GROUP BY with HAVING output", () => {
   const sql =
     "SELECT status, count FROM orders GROUP BY status HAVING count > 10 ORDER BY count DESC";
-  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
+    `SELECT "status", "count" FROM "orders" GROUP BY "status" HAVING "count" > 10 ORDER BY "count" DESC`,
+  );
 });
 
 // --- ORDER BY / OFFSET ---
@@ -164,7 +180,9 @@ test("GROUP BY with HAVING output", () => {
 test("ORDER BY with direction and NULLS order", () => {
   const sql =
     "SELECT id, name FROM users ORDER BY name ASC NULLS FIRST, id DESC NULLS LAST LIMIT 10 OFFSET 20";
-  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
+    `SELECT "id", "name" FROM "users" ORDER BY "name" ASC NULLS FIRST, "id" DESC NULLS LAST LIMIT 10 OFFSET 20`,
+  );
 });
 
 test("ORDER BY without direction", () => {

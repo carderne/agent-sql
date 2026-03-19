@@ -9,6 +9,6 @@ test("makeSqyrl returns a function that injects a tenant guard into SQL", () => 
   });
 
   expect(query("SELECT id FROM orders WHERE status = 'open'")).toBe(
-    "SELECT id FROM orders WHERE (orders.tenant_id = 't42' AND status = 'open')",
+    `SELECT "id" FROM "orders" WHERE ("orders"."tenant_id" = 't42' AND "status" = 'open')`,
   );
 });

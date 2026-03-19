@@ -7,7 +7,9 @@ import { sanitiseSql } from "../src/sanitise";
 test("round-trips a full statement", () => {
   const sql =
     "SELECT *, foo, t.bar, t.baz AS qux, t.* FROM myschema.mytable AS t WHERE status = 'active' LIMIT 10";
-  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
+    `SELECT *, "foo", "t"."bar", "t"."baz" AS qux, t.* FROM "myschema"."mytable" AS t WHERE "status" = 'active' LIMIT 10`,
+  );
 });
 
 test("output after sanitise prepends tenant clause", () => {
@@ -21,15 +23,17 @@ test("output after sanitise prepends tenant clause", () => {
     value: "abc",
   }).unwrap();
   expect(outputSql(result)).toBe(
-    "SELECT foo FROM bar INNER JOIN myschema.mytable AS mt ON mt.a = bar.a WHERE (myschema.mytable.tenant_id = 'abc' AND status = 'active')",
+    `SELECT "foo" FROM "bar" INNER JOIN "myschema"."mytable" AS mt ON "mt"."a" = "bar"."a" WHERE ("myschema"."mytable"."tenant_id" = 'abc' AND "status" = 'active')`,
   );
 });
 
 test("output adds parens when OR is nested inside AND", () => {
   const ast = parseSql("SELECT foo FROM bar WHERE (a = '1' OR b = '2') AND c = '3'").unwrap();
-  expect(outputSql(ast)).toBe("SELECT foo FROM bar WHERE ((a = '1' OR b = '2') AND c = '3')");
+  expect(outputSql(ast)).toBe(
+    `SELECT "foo" FROM "bar" WHERE (("a" = '1' OR "b" = '2') AND "c" = '3')`,
+  );
 });
 
 test("output with no WHERE or LIMIT", () => {
-  expect(outputSql(parseSql("SELECT x FROM y").unwrap())).toBe("SELECT x FROM y");
+  expect(outputSql(parseSql("SELECT x FROM y").unwrap())).toBe(`SELECT "x" FROM "y"`);
 });

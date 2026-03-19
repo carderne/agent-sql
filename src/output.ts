@@ -179,7 +179,7 @@ function handleOffset(node: OffsetClause): string {
 }
 
 function handleGroupBy(node: GroupByClause): string {
-  return `GROUP BY ${node.items.map((i) => r(i)).join(", ")}`;
+  return `GROUP BY ${mapR(node.items)}`;
 }
 
 function handleHaving(node: HavingClause): string {
@@ -187,7 +187,7 @@ function handleHaving(node: HavingClause): string {
 }
 
 function handleOrderBy(node: OrderByClause): string {
-  return `ORDER BY ${node.items.map((i) => r(i)).join(", ")}`;
+  return `ORDER BY ${mapR(node.items)}`;
 }
 
 function handleOrderByItem(node: OrderByItem): string {
@@ -203,8 +203,8 @@ function handleOrderByItem(node: OrderByItem): string {
 
 export function handleTableRef(node: TableRef): string {
   const { schema, name, alias } = node;
-  const schemaPref = schema ? `${schema}.` : "";
-  return `${schemaPref}${name} ${r(alias)}`;
+  const schemaPref = schema ? `"${schema}".` : "";
+  return `${schemaPref}"${name}" ${r(alias)}`;
 }
 
 function handleWhereRoot(node: WhereRoot): string {
@@ -238,8 +238,7 @@ function handleWhereBetween(node: WhereBetween): string {
 }
 
 function handleWhereIn(node: WhereIn): string {
-  const list = node.list.map((v) => r(v)).join(", ");
-  return `${r(node.expr)}${node.not ? " NOT" : ""} IN (${list})`;
+  return `${r(node.expr)}${node.not ? " NOT" : ""} IN (${mapR(node.list)})`;
 }
 
 function handleCaseExpr(node: CaseExpr): string {
@@ -301,17 +300,16 @@ function handleAlias(node: Alias): string {
 
 function handleColumnRef(node: ColumnRef): string {
   const { schema, table, name } = node;
-  const schemaPref = schema ? `${schema}.` : "";
-  const tablePref = table ? `${table}.` : "";
-  return `${schemaPref}${tablePref}${name}`;
+  const schemaPref = schema ? `"${schema}".` : "";
+  const tablePref = table ? `"${table}".` : "";
+  return `${schemaPref}${tablePref}"${name}"`;
 }
 
 function handleFuncCall(node: FuncCall): string {
   const { name, args } = node;
   if (args.kind === "wildcard") return `${name}(*)`;
   const distinctStr = args.distinct ? "DISTINCT " : "";
-  const argsStr = args.args.map((a) => r(a)).join(", ");
-  return `${name}(${distinctStr}${argsStr})`;
+  return `${name}(${distinctStr}${mapR(args.args)})`;
 }
 
 function handleColumnExpr(node: ColumnExpr): string {

@@ -7,8 +7,8 @@ import { secret } from "./secret";
 
 const tables = defineTables({
   organization: { id: null },
-  user: { id: null, organizationId: { organization: "id" } },
-  message: { userId: { user: "id" } },
+  user: { id: null, organization_id: { ft: "organization", fc: "id" } },
+  message: { user_id: { ft: "user", fc: "id" } },
 });
 const guardCol = {
   table: "organization",
@@ -35,6 +35,7 @@ export async function testOneAttack(query: Query, client: Client) {
     if (!(san.error instanceof SanitiseError)) {
       throw new Error("SQL parsing or something else failed", { cause: san.error });
     }
+    console.log(san.error.message);
     expect(query.expectPassSan).toBe(false);
     return;
   }
