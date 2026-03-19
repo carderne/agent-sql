@@ -83,6 +83,7 @@ SQL {
     = "(" WhereExpr ")"    -- paren
     | not WherePrimary     -- not
     | WhereComparison
+    | WhereValue           -- value
 
   WhereComparison
     = WhereValue compOp WhereValue              -- compare
@@ -152,7 +153,9 @@ SQL {
   stringLiteral = "'" (~"'" any)* "'"
   floatLiteral  = digit+ "." digit+
 
-  boolLiteral = (caseInsensitive<"true"> | caseInsensitive<"false">) ~identPart
+  true_kw  = caseInsensitive<"true">  ~identPart
+  false_kw = caseInsensitive<"false"> ~identPart
+  boolLiteral = (true_kw | false_kw)
 
   // --- GROUP BY / HAVING ---
 
@@ -235,6 +238,7 @@ SQL {
           | order | by | asc | desc | nulls | first | last | offset | group | having | distinct
           | between | in | like | unknown
           | case | when | then | else | end_kw | cast
+          | true_kw | false_kw
   identPart = alnum | "_"
 
   // --- Comments & whitespace ---

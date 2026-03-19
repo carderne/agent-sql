@@ -1,0 +1,11 @@
+services:
+  postgres:
+    container_name: sqyrl-postgres
+    image: postgres:18.3-alpine3.23
+    environment:
+      - POSTGRES_USER=pg
+      - POSTGRES_PASSWORD=pw
+      - POSTGRES_DB=db
+    ports:
+      - "5801:5432"
+    restart: always

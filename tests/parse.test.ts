@@ -13,7 +13,7 @@ SELECT
 FROM optional_schema.table1 AS fo -- column entries can also have schema, "AS" is optional
 LIMIT 10;
   `.trim();
-  const ast = parseSql(sql);
+  const ast = parseSql(sql).unwrap();
 
   expect(ast).toEqual({
     type: "select",
@@ -45,7 +45,7 @@ LIMIT 10;
 });
 
 test("parses simple select without limit", () => {
-  const ast = parseSql("SELECT foo FROM bar");
+  const ast = parseSql("SELECT foo FROM bar").unwrap();
   expect(ast).toEqual({
     type: "select",
     distinct: null,
@@ -62,7 +62,7 @@ test("parses simple select without limit", () => {
 });
 
 test("parses table with implicit alias", () => {
-  const ast = parseSql("SELECT a FROM schema1.tbl t");
+  const ast = parseSql("SELECT a FROM schema1.tbl t").unwrap();
   expect(ast).toEqual({
     type: "select",
     distinct: null,
@@ -87,13 +87,13 @@ test("parses table with implicit alias", () => {
 });
 
 test("parses trailing semicolon as optional", () => {
-  const withSemi = parseSql("SELECT x FROM y;");
-  const withoutSemi = parseSql("SELECT x FROM y");
+  const withSemi = parseSql("SELECT x FROM y;").unwrap();
+  const withoutSemi = parseSql("SELECT x FROM y").unwrap();
   expect(withSemi).toEqual(withoutSemi);
 });
 
 test("is case-insensitive for keywords", () => {
-  const ast = parseSql("select foo from bar limit 5");
+  const ast = parseSql("select foo from bar limit 5").unwrap();
   expect(ast).toEqual({
     type: "select",
     distinct: null,
@@ -110,7 +110,7 @@ test("is case-insensitive for keywords", () => {
 });
 
 test("throws on invalid SQL", () => {
-  expect(() => parseSql("INVALID")).toThrow();
+  expect(() => parseSql("INVALID").unwrap()).toThrow();
 });
 
 const strVal = (v: string) => ({ type: "where_value", kind: "string", value: v }) as const;
@@ -131,7 +131,7 @@ const qualWildExpr = (table: string) =>
   ({ type: "column_expr", kind: "qualified_wildcard", table }) as const;
 
 test("parses simple WHERE clause", () => {
-  const ast = parseSql("SELECT foo FROM bar WHERE baz = 'hello'");
+  const ast = parseSql("SELECT foo FROM bar WHERE baz = 'hello'").unwrap();
   expect(ast.where).toEqual({
     type: "where_root",
     inner: {
@@ -144,7 +144,7 @@ test("parses simple WHERE clause", () => {
 });
 
 test("parses WHERE with qualified column ref", () => {
-  const ast = parseSql("SELECT foo FROM bar WHERE t.baz = 'hello'");
+  const ast = parseSql("SELECT foo FROM bar WHERE t.baz = 'hello'").unwrap();
   expect(ast.where).toEqual({
     type: "where_root",
     inner: {
@@ -157,7 +157,7 @@ test("parses WHERE with qualified column ref", () => {
 });
 
 test("parses WHERE with AND", () => {
-  const ast = parseSql("SELECT foo FROM bar WHERE a = '1' AND b = '2'");
+  const ast = parseSql("SELECT foo FROM bar WHERE a = '1' AND b = '2'").unwrap();
   expect(ast.where).toEqual({
     type: "where_root",
     inner: {
@@ -179,7 +179,7 @@ test("parses WHERE with AND", () => {
 });
 
 test("parses WHERE with OR", () => {
-  const ast = parseSql("SELECT foo FROM bar WHERE a = '1' OR b = '2'");
+  const ast = parseSql("SELECT foo FROM bar WHERE a = '1' OR b = '2'").unwrap();
   expect(ast.where).toEqual({
     type: "where_root",
     inner: {
@@ -202,7 +202,7 @@ test("parses WHERE with OR", () => {
 
 test("parses WHERE with AND having higher precedence than OR", () => {
   // a = '1' OR b = '2' AND c = '3'  →  a OR (b AND c)
-  const ast = parseSql("SELECT foo FROM bar WHERE a = '1' OR b = '2' AND c = '3'");
+  const ast = parseSql("SELECT foo FROM bar WHERE a = '1' OR b = '2' AND c = '3'").unwrap();
   expect(ast.where).toEqual({
     type: "where_root",
     inner: {
@@ -234,7 +234,7 @@ test("parses WHERE with AND having higher precedence than OR", () => {
 
 test("parses WHERE with parens overriding precedence", () => {
   // (a = '1' OR b = '2') AND c = '3'
-  const ast = parseSql("SELECT foo FROM bar WHERE (a = '1' OR b = '2') AND c = '3'");
+  const ast = parseSql("SELECT foo FROM bar WHERE (a = '1' OR b = '2') AND c = '3'").unwrap();
   expect(ast.where).toEqual({
     type: "where_root",
     inner: {

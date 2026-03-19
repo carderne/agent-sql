@@ -150,6 +150,7 @@ export interface SQLActionDict<T> extends BaseActionDict<T> {
     arg2: TerminalNode,
   ) => T;
   WherePrimary_not?: (this: NonterminalNode, arg0: NonterminalNode, arg1: NonterminalNode) => T;
+  WherePrimary_value?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   WherePrimary?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   WhereComparison_compare?: (
     this: NonterminalNode,
@@ -372,6 +373,8 @@ export interface SQLActionDict<T> extends BaseActionDict<T> {
     arg1: TerminalNode,
     arg2: IterationNode,
   ) => T;
+  true_kw?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  false_kw?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   boolLiteral?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   GroupByClause?: (
     this: NonterminalNode,

@@ -4,12 +4,12 @@ import { parseSql } from "../src";
 import { sanitiseSql } from "../src/sanitise";
 
 test("sanitise adds WHERE clause when none exists", () => {
-  const ast = parseSql("SELECT foo FROM mytable");
+  const ast = parseSql("SELECT foo FROM mytable").unwrap();
   const result = sanitiseSql(ast, {
     table: "mytable",
     col: "tenant_id",
     value: "abc",
-  });
+  }).unwrap();
 
   expect(result.where).toEqual({
     type: "where_root",
@@ -27,12 +27,12 @@ test("sanitise adds WHERE clause when none exists", () => {
 });
 
 test("sanitise prepends to existing WHERE as top-level AND", () => {
-  const ast = parseSql("SELECT foo FROM mytable WHERE status = 'active'");
+  const ast = parseSql("SELECT foo FROM mytable WHERE status = 'active'").unwrap();
   const result = sanitiseSql(ast, {
     table: "mytable",
     col: "tenant_id",
     value: "abc",
-  });
+  }).unwrap();
 
   expect(result.where).toEqual({
     type: "where_root",

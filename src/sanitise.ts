@@ -1,5 +1,12 @@
 import type { ColumnRef, SelectStatement, TableRef, WhereComparison, WhereValue } from "./ast";
 import { handleTableRef } from "./output";
+import { Err, Ok, type Result } from "./result";
+
+export interface GuardCol {
+  schema?: string;
+  table: string;
+  col: string;
+}
 
 export interface WhereGuard {
   schema?: string;
@@ -15,13 +22,13 @@ export interface WhereGuard {
 export function sanitiseSql(
   ast: SelectStatement,
   { schema, table, col, value }: WhereGuard,
-): SelectStatement {
+): Result<SelectStatement> {
   // First check that the FROM or JOIN clauses include the required table
   const tableRef: TableRef = { type: "table_ref", schema, name: table };
   const hasNeededTable = checkIfTableRefExists(ast, tableRef);
   if (!hasNeededTable) {
     const tableName = handleTableRef(tableRef);
-    throw new Error(`The table '${tableName}' must appear in the FROM or JOIN clauses.`);
+    return Err(`The table '${tableName}' must appear in the FROM or JOIN clauses.`);
   }
 
   const whereRightClause: WhereValue =
@@ -45,7 +52,7 @@ export function sanitiseSql(
     right: whereRightClause,
   };
 
-  return {
+  return Ok({
     ...ast,
     where: ast.where
       ? {
@@ -53,7 +60,7 @@ export function sanitiseSql(
           inner: { type: "where_and", left: newClause, right: ast.where.inner },
         }
       : { type: "where_root", inner: newClause },
-  };
+  });
 }
 
 function checkIfTableRefExists(ast: SelectStatement, tableRef: TableRef): boolean {
@@ -63,6 +70,6 @@ function checkIfTableRefExists(ast: SelectStatement, tableRef: TableRef): boolea
   );
 }
 
-function tableEquals(a: TableRef, b: TableRef): boolean {
+export function tableEquals(a: TableRef, b: TableRef): boolean {
   return a.schema == b.schema && a.name == b.name;
 }

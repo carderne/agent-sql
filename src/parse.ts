@@ -42,6 +42,7 @@ import type {
   WhereUnaryMinus,
   WhereValue,
 } from "./ast";
+import { Err, Ok, type Result } from "./result";
 import grammar, { type SQLSemantics } from "./sql.ohm-bundle";
 
 const semantics: SQLSemantics = grammar.createSemantics();
@@ -747,10 +748,10 @@ semantics.addOperation<ASTNode>("toAST()", {
   },
 });
 
-export function parseSql(expr: string): SelectStatement {
+export function parseSql(expr: string): Result<SelectStatement> {
   const matchResult = grammar.match(expr);
   if (matchResult.failed()) {
-    throw new Error(matchResult.message);
+    return Err(matchResult.message);
   }
-  return semantics(matchResult).toAST() as SelectStatement;
+  return Ok(semantics(matchResult).toAST() as SelectStatement);
 }

@@ -24,32 +24,34 @@ npm install sqyrl
 ```
 
 ```ts
-import { sqyrl } from "sqyrl";
+import { sanitise } from "sqyrl";
 
-const sql = sqyrl(`SELECT id, name FROM users WHERE status = 'active' LIMIT 10`, {
-  table: "users",
-  col: "tenant_id",
-  value: "acme",
+const sql = sanitise(`SELECT id, name FROM users WHERE status = 'active' LIMIT 10`, {
+  tables: { users: {} },
+  where: { table: "users", col: "tenant_id", value: "acme" },
 });
 
 console.log(sql);
 // SELECT id, name
 // FROM users
-// WHERE (users.tenant_id = 'acme'
-// AND status = 'active') LIMIT 10
+// WHERE (users.tenant_id = 'acme' AND status = 'active')
+// LIMIT 10
 ```
 
 Or, more usefully:
 
 ```ts
-import { makeSqyrl } from "sqyrl";
+import { sanitiserFactory } from "sqyrl";
 import { tool } from "ai";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
 
 function makeSqlTool(orgId: string) {
   // Create a sanitiser function for this tenant
-  const sqyrl = makeSqyrl({ table: "org", col: "id", value: orgId });
+  const sanitise = sanitiserFactory({
+    tables: {},
+    where: { table: "org", col: "id", value: orgId },
+  });
 
   return tool({
     description: "Run raw SQL against the DB",
@@ -57,7 +59,7 @@ function makeSqlTool(orgId: string) {
     execute: async ({ query }) => {
       // The LLM can pass any query it likes, we'll sanitise it if possible
       // and return helpful error messages if not
-      const sanitised = sqyrl(query);
+      const sanitised = sanitise(query);
       // Now we can throw that straight at the db and be confident it'll only
       // return data from the specified tenant
       return db.execute(sql.raw(sanitised));

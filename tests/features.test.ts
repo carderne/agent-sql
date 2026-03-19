@@ -7,7 +7,7 @@ import { outputSql } from "../src/output";
 
 test("WHERE with inequality operators output", () => {
   const sql = "SELECT id FROM orders WHERE amount >= 100 AND status <> 'cancelled'";
-  expect(outputSql(parseSql(sql))).toBe(
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
     "SELECT id FROM orders WHERE (amount >= 100 AND status <> 'cancelled')",
   );
 });
@@ -16,39 +16,39 @@ test("WHERE with inequality operators output", () => {
 
 test("WHERE NOT and IS NULL output", () => {
   const sql = "SELECT id FROM users WHERE NOT active = TRUE AND deleted_at IS NULL";
-  expect(outputSql(parseSql(sql))).toBe(
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
     "SELECT id FROM users WHERE (NOT active = TRUE AND deleted_at IS NULL)",
   );
 });
 
 test("IS NOT NULL round-trip", () => {
   const sql = "SELECT id FROM users WHERE email IS NOT NULL";
-  expect(outputSql(parseSql(sql))).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
 });
 
 // --- JOINs ---
 
 test("INNER JOIN with ON condition output", () => {
   const sql = "SELECT u.id, o.total FROM users AS u INNER JOIN orders AS o ON u.id = o.user_id";
-  expect(outputSql(parseSql(sql))).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
 });
 
 test("LEFT JOIN with USING output", () => {
   const sql = "SELECT a.id, b.name FROM a LEFT JOIN b USING (id)";
-  expect(outputSql(parseSql(sql))).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
 });
 
 test("multiple JOINs parse to correct join types", () => {
   const ast = parseSql(
     "SELECT * FROM t1 LEFT OUTER JOIN t2 ON t1.id = t2.id RIGHT JOIN t3 ON t1.id = t3.id",
-  );
+  ).unwrap();
   expect(ast.joins).toHaveLength(2);
   expect(ast.joins[0].joinType).toBe("left_outer");
   expect(ast.joins[1].joinType).toBe("right");
 });
 
 test("CROSS JOIN and NATURAL JOIN", () => {
-  const ast = parseSql("SELECT * FROM a CROSS JOIN b NATURAL JOIN c");
+  const ast = parseSql("SELECT * FROM a CROSS JOIN b NATURAL JOIN c").unwrap();
   expect(ast.joins[0]).toMatchObject({ type: "join", joinType: "cross", condition: null });
   expect(ast.joins[1]).toMatchObject({ type: "join", joinType: "natural", condition: null });
 });
@@ -58,23 +58,23 @@ test("CROSS JOIN and NATURAL JOIN", () => {
 test("CASE WHEN THEN ELSE END (searched)", () => {
   const sql =
     "SELECT CASE WHEN status = 'active' THEN 1 WHEN status = 'pending' THEN 2 ELSE 0 END FROM t";
-  expect(outputSql(parseSql(sql))).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
 });
 
 test("CASE expr WHEN ... (simple form)", () => {
   const sql = "SELECT CASE status WHEN 'active' THEN 1 ELSE 0 END FROM t";
-  expect(outputSql(parseSql(sql))).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
 });
 
 test("CAST expression", () => {
   const sql = "SELECT CAST(price AS numeric(10, 2)), CAST(created_at AS date) FROM orders";
-  expect(outputSql(parseSql(sql))).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
 });
 
 // --- Double-quoted identifiers ---
 
 test("double-quoted identifiers in SELECT and FROM", () => {
-  const ast = parseSql('SELECT "My Column", "user id" FROM "My Table" AS t');
+  const ast = parseSql('SELECT "My Column", "user id" FROM "My Table" AS t').unwrap();
   expect(ast.columns[0].expr).toMatchObject({ kind: "expr" });
   const col0 = ast.columns[0].expr as any;
   expect(col0.expr.ref.name).toBe("My Column");
@@ -88,14 +88,14 @@ test("double-quoted identifiers in SELECT and FROM", () => {
 
 test("arithmetic in SELECT and WHERE", () => {
   const sql = "SELECT price * quantity FROM orders WHERE price * quantity > 100";
-  expect(outputSql(parseSql(sql))).toBe(
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
     "SELECT (price * quantity) FROM orders WHERE (price * quantity) > 100",
   );
 });
 
 test("string concatenation and unary minus", () => {
   const sql = "SELECT fname || ' ' || lname FROM t WHERE -score < -10";
-  expect(outputSql(parseSql(sql))).toBe(
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
     "SELECT ((fname || ' ') || lname) FROM t WHERE -score < -10",
   );
 });
@@ -104,7 +104,7 @@ test("string concatenation and unary minus", () => {
 
 test("BETWEEN and NOT BETWEEN", () => {
   const sql = "SELECT id FROM t WHERE age BETWEEN 18 AND 65 AND score NOT BETWEEN 0 AND 50";
-  expect(outputSql(parseSql(sql))).toBe(
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
     "SELECT id FROM t WHERE (age BETWEEN 18 AND 65 AND score NOT BETWEEN 0 AND 50)",
   );
 });
@@ -112,21 +112,21 @@ test("BETWEEN and NOT BETWEEN", () => {
 test("IN list and NOT IN list", () => {
   const sql =
     "SELECT id FROM t WHERE status IN ('active', 'pending') AND role NOT IN ('admin', 'root')";
-  expect(outputSql(parseSql(sql))).toBe(
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
     "SELECT id FROM t WHERE (status IN ('active', 'pending') AND role NOT IN ('admin', 'root'))",
   );
 });
 
 test("LIKE and NOT LIKE", () => {
   const sql = "SELECT id FROM t WHERE name LIKE '%foo%' AND email NOT LIKE '%bar%'";
-  expect(outputSql(parseSql(sql))).toBe(
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
     "SELECT id FROM t WHERE (name LIKE '%foo%' AND email NOT LIKE '%bar%')",
   );
 });
 
 test("IS TRUE / IS FALSE / IS UNKNOWN", () => {
   const sql = "SELECT id FROM t WHERE active IS TRUE AND deleted IS NOT FALSE AND flag IS UNKNOWN";
-  expect(outputSql(parseSql(sql))).toBe(
+  expect(outputSql(parseSql(sql).unwrap())).toBe(
     "SELECT id FROM t WHERE ((active IS TRUE AND deleted IS NOT FALSE) AND flag IS UNKNOWN)",
   );
 });
@@ -136,19 +136,19 @@ test("IS TRUE / IS FALSE / IS UNKNOWN", () => {
 test("function calls in SELECT and WHERE", () => {
   const sql =
     "SELECT count(*), lower(name), coalesce(email, 'none') FROM users WHERE length(name) > 3";
-  expect(outputSql(parseSql(sql))).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
 });
 
 test("aggregate with DISTINCT", () => {
   const sql = "SELECT count(DISTINCT user_id) FROM events";
-  expect(outputSql(parseSql(sql))).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
 });
 
 // --- DISTINCT ---
 
 test("SELECT DISTINCT output", () => {
   const sql = "SELECT DISTINCT status FROM orders";
-  expect(outputSql(parseSql(sql))).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
 });
 
 // --- GROUP BY / HAVING ---
@@ -156,7 +156,7 @@ test("SELECT DISTINCT output", () => {
 test("GROUP BY with HAVING output", () => {
   const sql =
     "SELECT status, count FROM orders GROUP BY status HAVING count > 10 ORDER BY count DESC";
-  expect(outputSql(parseSql(sql))).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
 });
 
 // --- ORDER BY / OFFSET ---
@@ -164,11 +164,11 @@ test("GROUP BY with HAVING output", () => {
 test("ORDER BY with direction and NULLS order", () => {
   const sql =
     "SELECT id, name FROM users ORDER BY name ASC NULLS FIRST, id DESC NULLS LAST LIMIT 10 OFFSET 20";
-  expect(outputSql(parseSql(sql))).toBe(sql);
+  expect(outputSql(parseSql(sql).unwrap())).toBe(sql);
 });
 
 test("ORDER BY without direction", () => {
-  const ast = parseSql("SELECT x FROM t ORDER BY x");
+  const ast = parseSql("SELECT x FROM t ORDER BY x").unwrap();
   expect(ast.orderBy).toEqual({
     type: "order_by",
     items: [
@@ -184,7 +184,7 @@ test("ORDER BY without direction", () => {
 // --- Numeric and boolean RHS literals ---
 
 test("WHERE with integer RHS literal", () => {
-  const ast = parseSql("SELECT x FROM t WHERE age > 18");
+  const ast = parseSql("SELECT x FROM t WHERE age > 18").unwrap();
   expect(ast.where?.inner).toEqual({
     type: "where_comparison",
     operator: ">",
@@ -194,7 +194,7 @@ test("WHERE with integer RHS literal", () => {
 });
 
 test("WHERE with float RHS literal", () => {
-  const ast = parseSql("SELECT x FROM t WHERE score >= 9.5");
+  const ast = parseSql("SELECT x FROM t WHERE score >= 9.5").unwrap();
   expect(ast.where?.inner).toEqual({
     type: "where_comparison",
     operator: ">=",
@@ -204,7 +204,7 @@ test("WHERE with float RHS literal", () => {
 });
 
 test("WHERE with boolean RHS literal", () => {
-  const ast = parseSql("SELECT x FROM t WHERE active = TRUE");
+  const ast = parseSql("SELECT x FROM t WHERE active = TRUE").unwrap();
   expect(ast.where?.inner).toEqual({
     type: "where_comparison",
     operator: "=",
@@ -214,7 +214,7 @@ test("WHERE with boolean RHS literal", () => {
 });
 
 test("WHERE with NULL value RHS", () => {
-  const ast = parseSql("SELECT x FROM t WHERE col = NULL");
+  const ast = parseSql("SELECT x FROM t WHERE col = NULL").unwrap();
   expect(ast.where?.inner).toEqual({
     type: "where_comparison",
     operator: "=",
