@@ -1,4 +1,5 @@
 import type { ColumnRef, SelectStatement, TableRef, WhereComparison, WhereValue } from "./ast";
+import { SanitiseError } from "./errors";
 import { handleTableRef } from "./output";
 import { Err, Ok, type Result } from "./result";
 
@@ -28,7 +29,9 @@ export function sanitiseSql(
   const hasNeededTable = checkIfTableRefExists(ast, tableRef);
   if (!hasNeededTable) {
     const tableName = handleTableRef(tableRef);
-    return Err(`The table '${tableName}' must appear in the FROM or JOIN clauses.`);
+    return Err(
+      new SanitiseError(`The table '${tableName}' must appear in the FROM or JOIN clauses.`),
+    );
   }
 
   const whereRightClause: WhereValue =

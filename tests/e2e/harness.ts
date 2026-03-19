@@ -1,0 +1,46 @@
+import type { Client } from "pg";
+import { expect } from "vite-plus/test";
+
+import { defineTables, makeFactory } from "../../src";
+import { SanitiseError } from "../../src/errors";
+import { secret } from "./secret";
+
+const tables = defineTables({
+  organization: { id: null },
+  user: { id: null, organizationId: { organization: "id" } },
+  message: { userId: { user: "id" } },
+});
+const guardCol = {
+  table: "organization",
+  col: "id",
+};
+const factory = makeFactory({ tables, guardCol, throws: false });
+const sanitiser = factory(1);
+
+function dataIsSafe(object: unknown): boolean {
+  return !JSON.stringify(object).includes(secret);
+}
+
+export interface Query {
+  name: string;
+  sql: string;
+  // whether we expect the query to pass sanitisation
+  expectPassSan: boolean;
+}
+
+export async function testOneAttack(query: Query, client: Client) {
+  const san = sanitiser(query.sql);
+
+  if (!san.ok) {
+    if (!(san.error instanceof SanitiseError)) {
+      throw new Error("SQL parsing or something else failed", { cause: san.error });
+    }
+    expect(query.expectPassSan).toBe(false);
+    return;
+  }
+
+  expect(query.expectPassSan).toBe(true);
+
+  const result = await client.query(san.data);
+  expect(dataIsSafe(result)).toBe(true);
+}

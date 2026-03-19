@@ -10,7 +10,7 @@ export type Success<T = void> = {
   unwrap(): T;
 };
 
-export type Result<T = void, E = string> = Failure<E> | Success<T>;
+export type Result<T = void, E = Error> = Failure<E> | Success<T>;
 
 export function Err<E>(error: E): Failure<E> {
   return {
@@ -43,5 +43,5 @@ export function returnOrThrow<T>(result: Result<T>, throws: boolean): Result<T> 
   if (result.ok) {
     return result.data;
   }
-  throw new Error(result.error);
+  throw result.error;
 }

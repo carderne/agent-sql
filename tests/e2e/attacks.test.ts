@@ -1,31 +1,9 @@
 import { Client } from "pg";
-import { afterAll, beforeAll, describe, expect, test } from "vite-plus/test";
+import { afterAll, beforeAll, describe, test } from "vite-plus/test";
 
-import { defineTables, makeFactory } from "../../src";
+import { Query, testOneAttack } from "./harness";
 
 const DATABASE_URL = "postgres://pg:pw@localhost:5801/db";
-
-const tables = defineTables({
-  organization: { id: null },
-  user: { id: null, organizationId: { organization: "id" } },
-  message: { userId: { user: "id" } },
-});
-const guardCol = {
-  table: "organization",
-  col: "id",
-};
-const factory = makeFactory({ tables, guardCol, throws: false });
-const sanitiser = factory(1);
-
-function dataIsSafe(object: unknown): boolean {
-  return !JSON.stringify(object).includes("SECRET");
-}
-
-interface Query {
-  name: string;
-  sql: string;
-  expectPassSan: boolean;
-}
 
 const queries: Query[] = [
   {
@@ -47,6 +25,12 @@ const queries: Query[] = [
   },
 ];
 
+const singleQuery: Query = {
+  name: "new-attack",
+  sql: `select * from organization`,
+  expectPassSan: true,
+};
+
 describe("e2e", () => {
   let client: Client;
 
@@ -61,17 +45,11 @@ describe("e2e", () => {
 
   for (const query of queries) {
     test(query.name, async () => {
-      const san = sanitiser(query.sql);
-
-      if (!san.ok) {
-        expect(query.expectPassSan).toBe(false);
-        return;
-      }
-
-      expect(query.expectPassSan).toBe(true);
-
-      const result = await client.query(san.data);
-      expect(dataIsSafe(result)).toBe(true);
+      await testOneAttack(query, client);
     });
   }
+
+  test("new-attack", async () => {
+    await testOneAttack(singleQuery, client);
+  });
 });

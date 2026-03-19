@@ -1,4 +1,5 @@
 import type { ColumnRef, SelectStatement } from "./ast";
+import { SanitiseError } from "./errors";
 import { Err, Ok } from "./result";
 import type { Result } from "./result";
 
@@ -14,12 +15,12 @@ export function defineTables<
 
 export function checkJoins(ast: SelectStatement, tables: TableDefs): Result<SelectStatement> {
   if (!(ast.from.table.name in tables)) {
-    return Err(`Table ${ast.from.table.name} is not allowed`);
+    return Err(new SanitiseError(`Table ${ast.from.table.name} is not allowed`));
   }
 
   for (const join of ast.joins) {
     if (!(join.table.name in tables)) {
-      return Err(`Table ${join.table.name} is not allowed`);
+      return Err(new SanitiseError(`Table ${join.table.name} is not allowed`));
     }
     const joinSettings = tables[join.table.name];
     const allowedColRef: ColumnRef = {
@@ -34,34 +35,34 @@ export function checkJoins(ast: SelectStatement, tables: TableDefs): Result<Sele
 
     const joinCondition = join.condition;
     if (joinCondition === null) {
-      return Err("Joins without conditions not supported");
+      return Err(new SanitiseError("Joins without conditions not supported"));
     }
     if (joinCondition.type === "join_using") {
-      return Err("Join USING not supported");
+      return Err(new SanitiseError("Join USING not supported"));
     }
     if (joinCondition.expr.type !== "where_comparison") {
-      return Err("Only single JOIN ON foo = bar supported");
+      return Err(new SanitiseError("Only single JOIN ON foo = bar supported"));
     }
     if (joinCondition.expr.operator !== "=") {
-      return Err("Only = supported");
+      return Err(new SanitiseError("Only = supported"));
     }
     if (joinCondition.expr.left.type !== "where_value") {
-      return Err("Only where_value supported");
+      return Err(new SanitiseError("Only where_value supported"));
     }
     if (joinCondition.expr.left.kind !== "column_ref") {
-      return Err("Only column_ref supported supported");
+      return Err(new SanitiseError("Only column_ref supported supported"));
     }
     if (joinCondition.expr.right.type !== "where_value") {
-      return Err("Only where_value supported");
+      return Err(new SanitiseError("Only where_value supported"));
     }
     if (joinCondition.expr.right.kind !== "column_ref") {
-      return Err("Only column_ref supported supported");
+      return Err(new SanitiseError("Only column_ref supported supported"));
     }
     if (!columnRefEquals(joinCondition.expr.left.ref, allowedColRef)) {
-      return Err("Illegal join on left!");
+      return Err(new SanitiseError("Illegal join on left!"));
     }
     if (!columnRefEquals(joinCondition.expr.right.ref, allowedFkRef)) {
-      return Err("Illegal join on right!");
+      return Err(new SanitiseError("Illegal join on right!"));
     }
   }
 
