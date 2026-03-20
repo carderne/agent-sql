@@ -1,16 +1,16 @@
 {
-  "name": "sqyrl",
+  "name": "agent-sql",
   "version": "0.1.2",
   "description": "A starter for creating a TypeScript package.",
-  "homepage": "https://github.com/carderne/sqyrl#readme",
+  "homepage": "https://github.com/carderne/agent-sql#readme",
   "bugs": {
-    "url": "https://github.com/carderne/sqyrl/issues"
+    "url": "https://github.com/carderne/agent-sql/issues"
   },
   "license": "MIT",
   "author": "Chris Arderne <chris@rdrn.me>",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/carderne/sqyrl.git"
+    "url": "git+https://github.com/carderne/agent-sql.git"
   },
   "files": [
     "dist"
@@ -54,5 +54,5 @@
       "vitest": "npm:@voidzero-dev/vite-plus-test@latest"
     }
   },
-  "logo": "https://cdn.jsdelivr.net/gh/carderne/sqyrl@main/docs/logo.png"
+  "logo": "https://cdn.jsdelivr.net/gh/carderne/agent-sql@main/docs/logo.png"
 }

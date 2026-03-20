@@ -68,17 +68,17 @@ export function sanitiserFactory({
       : privateSanitise(expr, { tables, where, throws });
 }
 
-export function makeFactory(_: {
+export function makeSanitiserFactory(_: {
   tables: TableDefs;
   guardCol: GuardCol;
   throws: false;
 }): (guardVal: string | number) => (expr: string) => Result<string>;
-export function makeFactory(_: {
+export function makeSanitiserFactory(_: {
   tables: TableDefs;
   guardCol: GuardCol;
   throws?: true;
 }): (guardVal: string | number) => (expr: string) => string;
-export function makeFactory({
+export function makeSanitiserFactory({
   tables,
   guardCol,
   throws = true,

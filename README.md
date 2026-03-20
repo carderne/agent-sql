@@ -1,14 +1,10 @@
-# sqyrl
-
-<p align="center">
-  <img src="https://cdn.jsdelivr.net/gh/carderne/sqyrl@main/docs/logo.png" alt="sqyrl logo" width="200">
-</p>
+# agent-sql
 
 Sanitise agent-written SQL for multi-tenant DBs.
 
 You provide a tenant ID, and the agent supplies the query.
 
-sqyrl works by fully parsing the supplied SQL query into an AST.
+agent-sql works by fully parsing the supplied SQL query into an AST.
 The grammar ONLY accepts `SELECT` statements. Anything else is an error.
 CTEs and other complex things that we aren't confident of securing: error.
 
@@ -20,11 +16,11 @@ Apparently this is how [Trigger.dev does it](https://x.com/mattaitken/status/203
 ## Quickstart
 
 ```bash
-npm install sqyrl
+npm install agent-sql
 ```
 
 ```ts
-import { sanitise } from "sqyrl";
+import { sanitise } from "agent-sql";
 
 const sql = sanitise(`SELECT id, name FROM users WHERE status = 'active' LIMIT 10`, {
   tables: { users: {} },
@@ -41,7 +37,7 @@ console.log(sql);
 Or, more usefully:
 
 ```ts
-import { sanitiserFactory } from "sqyrl";
+import { sanitiserFactory } from "agent-sql";
 import { tool } from "ai";
 import { sql } from "drizzle-orm";
 import { db } from "@/db";
@@ -68,7 +64,7 @@ function makeSqlTool(orgId: string) {
 }
 ```
 
-`sqyrl` parses the SQL, enforces a mandatory equality filter on the given column as the outermost `AND` condition (so it cannot be short-circuited by agent-supplied `OR` clauses), and returns the sanitised SQL string.
+`agent-sql` parses the SQL, enforces a mandatory equality filter on the given column as the outermost `AND` condition (so it cannot be short-circuited by agent-supplied `OR` clauses), and returns the sanitised SQL string.
 
 ## Development
 

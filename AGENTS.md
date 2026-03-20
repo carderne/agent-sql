@@ -1,4 +1,4 @@
-# sqyrl
+# agent-sql
 
 This is a TypeScript library for sanitising SQL produced by agents so it can safely run against multi-tenant DBs.
 

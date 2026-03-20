@@ -1,7 +1,7 @@
 import type { Client } from "pg";
 import { expect } from "vite-plus/test";
 
-import { defineTables, makeFactory } from "../../src";
+import { defineTables, makeSanitiserFactory } from "../../src";
 import { SanitiseError } from "../../src/errors";
 import { secret } from "./secret";
 
@@ -14,7 +14,7 @@ const guardCol = {
   table: "organization",
   col: "id",
 };
-const factory = makeFactory({ tables, guardCol, throws: false });
+const factory = makeSanitiserFactory({ tables, guardCol, throws: false });
 const sanitiser = factory(1);
 
 function dataIsSafe(object: unknown): boolean {
