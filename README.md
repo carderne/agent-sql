@@ -12,6 +12,8 @@ It ensures that that the needed tenant table is somewhere in the query,
 and adds a `WHERE` clause ensuring that only values from the supplied ID are returned.
 Then it checks that the tables and `JOIN`s follow the schema, preventing sneaky joins.
 
+Function calls also go through a whitelist (configurable).
+
 Finally, we throw in a `LIMIT` clause (configurable) to prevent accidental LLM denial-of-service.
 
 Apparently this is how [Trigger.dev does it](https://x.com/mattaitken/status/2033928542975639785).

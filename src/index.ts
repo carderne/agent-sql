@@ -1,3 +1,4 @@
+import { checkFunctions, type DbType } from "./functions";
 import {
   applyGuards,
   resolveGuards,
@@ -11,6 +12,7 @@ import { parseSql } from "./parse";
 import { Ok, returnOrThrow, type Result } from "./result";
 
 export { parseSql, applyGuards as sanitiseSql, outputSql, defineSchema };
+export type { DbType } from "./functions";
 
 /*
  * A simple "README-friendly" API that doesn't require a schema to be provided
@@ -23,10 +25,15 @@ export function agentSql<S extends string>(
   sql: string,
   column: S & OneOrTwoDots<S>,
   value: GuardVal,
-  { schema, limit }: { schema?: Schema; limit?: number } = {},
+  {
+    schema,
+    limit,
+    db = "postgres",
+    allowExtraFunctions = [],
+  }: { schema?: Schema; limit?: number; db?: DbType; allowExtraFunctions?: string[] } = {},
 ): string {
   const guards = { [column]: value };
-  return privateAgentSql(sql, { guards, schema, limit, throws: true });
+  return privateAgentSql(sql, { guards, schema, limit, db, allowExtraFunctions, throws: true });
 }
 
 /*
@@ -47,31 +54,50 @@ export function agentSql<S extends string>(
 export function createAgentSql<T extends Schema, S extends SchemaGuardKeys<T>>(
   schema: T,
   guards: Record<S, GuardVal>,
-  opts: { limit?: number; throws: false },
+  opts: { limit?: number; throws: false; db?: DbType; allowExtraFunctions?: string[] },
 ): (expr: string) => Result<string>;
 export function createAgentSql<T extends Schema, S extends SchemaGuardKeys<T>>(
   schema: T,
   guards: Record<S, GuardVal>,
-  opts?: { limit?: number; throws?: true },
+  opts?: { limit?: number; throws?: true; db?: DbType; allowExtraFunctions?: string[] },
 ): (expr: string) => string;
 export function createAgentSql<T extends Schema, S extends SchemaGuardKeys<T>>(
   schema: T,
   guards: Record<S, GuardVal>,
-  { limit, throws = true }: { limit?: number; throws?: boolean } = {},
+  {
+    limit,
+    throws = true,
+    db = "postgres",
+    allowExtraFunctions = [],
+  }: { limit?: number; throws?: boolean; db?: DbType; allowExtraFunctions?: string[] } = {},
 ): (expr: string) => Result<string> | string {
   return (expr: string) =>
     throws
-      ? privateAgentSql(expr, { guards, schema, limit, throws })
-      : privateAgentSql(expr, { guards, schema, limit, throws });
+      ? privateAgentSql(expr, { guards, schema, limit, db, allowExtraFunctions, throws })
+      : privateAgentSql(expr, { guards, schema, limit, db, allowExtraFunctions, throws });
 }
 
 function privateAgentSql(
   sql: string,
-  _: { guards: Record<string, GuardVal>; schema?: Schema; limit?: number; throws: false },
+  _: {
+    guards: Record<string, GuardVal>;
+    schema?: Schema;
+    limit?: number;
+    db: DbType;
+    allowExtraFunctions: string[];
+    throws: false;
+  },
 ): Result<string>;
 function privateAgentSql(
   sql: string,
-  _: { guards: Record<string, GuardVal>; schema?: Schema; limit?: number; throws: true },
+  _: {
+    guards: Record<string, GuardVal>;
+    schema?: Schema;
+    limit?: number;
+    db: DbType;
+    allowExtraFunctions: string[];
+    throws: true;
+  },
 ): string;
 function privateAgentSql(
   sql: string,
@@ -79,11 +105,15 @@ function privateAgentSql(
     guards: guardsRaw,
     schema,
     limit,
+    db,
+    allowExtraFunctions,
     throws,
   }: {
     guards: Record<string, GuardVal>;
     schema?: Schema;
     limit?: number;
+    db: DbType;
+    allowExtraFunctions: string[];
     throws: boolean;
   },
 ): Result<string> | string {
@@ -93,7 +123,9 @@ function privateAgentSql(
   if (!ast.ok) return returnOrThrow(ast, throws);
   const ast2 = checkJoins(ast.data, schema);
   if (!ast2.ok) return returnOrThrow(ast2, throws);
-  const san = applyGuards(ast2.data, guards.data, limit);
+  const ast3 = checkFunctions(ast2.data, db, allowExtraFunctions);
+  if (!ast3.ok) return returnOrThrow(ast3, throws);
+  const san = applyGuards(ast3.data, guards.data, limit);
   if (!san.ok) return returnOrThrow(san, throws);
   const res = outputSql(san.data);
   if (throws) return res;
