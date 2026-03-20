@@ -1,9 +1,8 @@
-import { Client } from "pg";
+import type { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, test } from "vite-plus/test";
 
+import { setupDb, teardownDb } from "./db";
 import { Query, testOneAttack } from "./harness";
-
-const DATABASE_URL = "postgres://pg:pw@localhost:5801/db";
 
 const queries: Query[] = [
   {
@@ -195,24 +194,23 @@ const singleQuery: Query = {
 };
 
 describe("e2e", () => {
-  let client: Client;
+  let client: PGlite;
 
   beforeAll(async () => {
-    client = new Client({ connectionString: DATABASE_URL });
-    await client.connect();
+    client = await setupDb();
   });
 
   afterAll(async () => {
-    await client.end();
+    await teardownDb();
   });
 
   for (const query of queries) {
     test(query.name, async () => {
-      await testOneAttack(query, client);
+      await testOneAttack(query, client as any);
     });
   }
 
   test("new-attack", async () => {
-    await testOneAttack(singleQuery, client);
+    await testOneAttack(singleQuery, client as any);
   });
 });

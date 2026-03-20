@@ -16,6 +16,9 @@ importers:
         specifier: ^17.5.0
         version: 17.5.0
     devDependencies:
+      '@electric-sql/pglite':
+        specifier: ^0.4.1
+        version: 0.4.1
       '@ohm-js/cli':
         specifier: ^2.0.1
         version: 2.0.1(ohm-js@17.5.0)
@@ -45,6 +48,9 @@ importers:
         version: 0.1.12(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(typescript@5.9.3)(vite@8.0.0(@types/node@25.5.0)(esbuild@0.27.4)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2))(yaml@2.8.2)
 
 packages:
+
+  '@electric-sql/pglite@0.4.1':
+    resolution: {integrity: sha512-mZ9NzzUSYPOCnxHH1oAHPRzoMFJHY472raDKwXl/+6oPbpdJ7g8LsCN4FSaIIfkiCKHhb3iF/Zqo3NYxaIhU7Q==}
 
   '@emnapi/core@1.9.0':
     resolution: {integrity: sha512-0DQ98G9ZQZOxfUcQn1waV2yS8aWdZ6kJMbYCJB3oUBecjWYO1fqJ+a1DRfPF3O5JEkwqwP1A9QEN/9mYm2Yd0w==}
@@ -1264,6 +1270,8 @@ packages:
     hasBin: true
 
 snapshots:
+
+  '@electric-sql/pglite@0.4.1': {}
 
   '@emnapi/core@1.9.0':
     dependencies:
