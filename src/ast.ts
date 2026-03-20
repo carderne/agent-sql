@@ -13,19 +13,20 @@ export type ASTNode =
   | JoinClause
   | JoinCondition
   | Distinct
+  | DistinctOn
   | GroupByClause
   | HavingClause
   | OrderByClause
   | OrderByItem
   | LimitClause
   | OffsetClause;
-// Note: WhereIsBool, WhereBetween, WhereIn, WhereLike are covered by WhereExpr above
+// Note: WhereIsBool, WhereBetween, WhereIn, WhereLike, WhereTsMatch are covered by WhereExpr above
 
 export type Terminal = string | number | null | undefined;
 
 export interface SelectStatement {
   readonly type: "select";
-  distinct: Distinct | null;
+  distinct: Distinct | DistinctOn | null;
   columns: Column[];
   from: SelectFrom;
   joins: JoinClause[];
@@ -39,6 +40,12 @@ export interface SelectStatement {
 
 export interface Distinct {
   readonly type: "distinct";
+}
+
+/** PostgreSQL: DISTINCT ON (col1, col2, ...) */
+export interface DistinctOn {
+  readonly type: "distinct_on";
+  columns: WhereValue[];
 }
 
 export interface GroupByClause {
@@ -118,7 +125,8 @@ export type WhereExpr =
   | WhereIsBool
   | WhereBetween
   | WhereIn
-  | WhereLike;
+  | WhereLike
+  | WhereTsMatch;
 
 export interface WhereAnd {
   readonly type: "where_and";
@@ -169,7 +177,8 @@ export interface WhereIn {
   list: WhereValue[];
 }
 
-export type LikeOp = "like";
+/** "ilike" is PostgreSQL-specific (case-insensitive LIKE) */
+export type LikeOp = "like" | "ilike";
 
 export interface WhereLike {
   readonly type: "where_like";
@@ -177,6 +186,35 @@ export interface WhereLike {
   op: LikeOp;
   expr: WhereValue;
   pattern: WhereValue;
+}
+
+/** PostgreSQL: JSONB operators */
+export type JsonbOp = "->" | "->>" | "#>" | "#>>" | "?" | "?|" | "?&" | "@>";
+
+/** PostgreSQL: JSONB binary operator expression */
+export interface WhereJsonbOp {
+  readonly type: "where_jsonb_op";
+  op: JsonbOp;
+  left: WhereValue;
+  right: WhereValue;
+}
+
+/** PostgreSQL: text search match (@@) */
+export interface WhereTsMatch {
+  readonly type: "where_ts_match";
+  left: WhereValue;
+  right: WhereValue;
+}
+
+/** pgvector: distance operators */
+export type PgvectorOp = "<->" | "<#>" | "<=>" | "<+>" | "<~>" | "<%>";
+
+/** pgvector: distance operator expression */
+export interface WherePgvectorOp {
+  readonly type: "where_pgvector_op";
+  op: PgvectorOp;
+  left: WhereValue;
+  right: WhereValue;
 }
 
 export type ArithOp = "+" | "-" | "*" | "/" | "%" | "||";
@@ -221,6 +259,8 @@ export type WhereValue =
   | { readonly type: "where_value"; kind: "func_call"; func: FuncCall }
   | WhereArith
   | WhereUnaryMinus
+  | WhereJsonbOp
+  | WherePgvectorOp
   | CaseExpr
   | CastExpr;
 

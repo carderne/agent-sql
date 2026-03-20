@@ -7,6 +7,7 @@ import type {
   ColumnExpr,
   ColumnRef,
   Distinct,
+  DistinctOn,
   FuncCall,
   GroupByClause,
   HavingClause,
@@ -27,10 +28,13 @@ import type {
   WhereIn,
   WhereIsBool,
   WhereIsNull,
+  WhereJsonbOp,
+  WherePgvectorOp,
   WhereLike,
   WhereNot,
   WhereOr,
   WhereRoot,
+  WhereTsMatch,
   WhereUnaryMinus,
   WhereValue,
 } from "./ast";
@@ -83,6 +87,8 @@ function r(node: ASTNode | Terminal): string {
       return handleHaving(node);
     case "distinct":
       return handleDistinct(node);
+    case "distinct_on":
+      return handleDistinctOn(node);
     case "where_root":
       return handleWhereRoot(node);
     case "where_and":
@@ -105,6 +111,12 @@ function r(node: ASTNode | Terminal): string {
       return handleWhereLike(node);
     case "where_arith":
       return handleWhereArith(node);
+    case "where_jsonb_op":
+      return handleWhereJsonbOp(node);
+    case "where_pgvector_op":
+      return handleWherePgvectorOp(node);
+    case "where_ts_match":
+      return handleWhereTsMatch(node);
     case "where_unary_minus":
       return handleWhereUnaryMinus(node);
     case "case_expr":
@@ -140,6 +152,10 @@ function handleSelect(node: SelectStatement): string {
 
 function handleDistinct(_node: Distinct): string {
   return "DISTINCT";
+}
+
+function handleDistinctOn(node: DistinctOn): string {
+  return `DISTINCT ON (${mapR(node.columns)})`;
 }
 
 function handleSelectFrom(node: SelectFrom): string {
@@ -254,6 +270,21 @@ function handleCastExpr(node: CastExpr): string {
 
 function handleWhereArith(node: WhereArith): string {
   return `(${r(node.left)} ${node.op} ${r(node.right)})`;
+}
+
+/** PostgreSQL: JSONB operators */
+function handleWhereJsonbOp(node: WhereJsonbOp): string {
+  return `(${r(node.left)} ${node.op} ${r(node.right)})`;
+}
+
+/** pgvector: distance operators */
+function handleWherePgvectorOp(node: WherePgvectorOp): string {
+  return `(${r(node.left)} ${node.op} ${r(node.right)})`;
+}
+
+/** PostgreSQL: text search match */
+function handleWhereTsMatch(node: WhereTsMatch): string {
+  return `${r(node.left)} @@ ${r(node.right)}`;
 }
 
 function handleWhereUnaryMinus(node: WhereUnaryMinus): string {

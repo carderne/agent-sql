@@ -28,6 +28,16 @@ export interface SQLActionDict<T> extends BaseActionDict<T> {
     arg10: IterationNode,
     arg11: IterationNode,
   ) => T;
+  DistinctClause_on?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: NonterminalNode,
+    arg2: TerminalNode,
+    arg3: NonterminalNode,
+    arg4: TerminalNode,
+  ) => T;
+  DistinctClause_plain?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  DistinctClause?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   Distinct?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   ColumnList?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   ColumnEntry_aliased?: (
@@ -244,8 +254,30 @@ export interface SQLActionDict<T> extends BaseActionDict<T> {
     arg1: NonterminalNode,
     arg2: NonterminalNode,
   ) => T;
+  WhereComparison_notIlike?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: NonterminalNode,
+    arg2: NonterminalNode,
+    arg3: NonterminalNode,
+  ) => T;
+  WhereComparison_ilike?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: NonterminalNode,
+    arg2: NonterminalNode,
+  ) => T;
+  WhereComparison_tsMatch?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: NonterminalNode,
+    arg2: NonterminalNode,
+  ) => T;
   WhereComparison?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   compOp?: (this: NonterminalNode, arg0: TerminalNode) => T;
+  tsMatchOp?: (this: NonterminalNode, arg0: TerminalNode) => T;
+  jsonbOp?: (this: NonterminalNode, arg0: TerminalNode) => T;
+  pgvectorOp?: (this: NonterminalNode, arg0: TerminalNode) => T;
   WhereValue?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   AddExpr_add?: (
     this: NonterminalNode,
@@ -285,8 +317,28 @@ export interface SQLActionDict<T> extends BaseActionDict<T> {
     arg2: NonterminalNode,
   ) => T;
   MulExpr?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  ExtOpExpr_jsonb?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: NonterminalNode,
+    arg2: NonterminalNode,
+  ) => T;
+  ExtOpExpr_pgvector?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: NonterminalNode,
+    arg2: NonterminalNode,
+  ) => T;
+  ExtOpExpr?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   UnaryExpr_neg?: (this: NonterminalNode, arg0: TerminalNode, arg1: NonterminalNode) => T;
   UnaryExpr?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  PostfixExpr_castShorthand?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: TerminalNode,
+    arg2: NonterminalNode,
+  ) => T;
+  PostfixExpr?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   AtomExpr_case?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   AtomExpr_cast?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   AtomExpr_func?: (this: NonterminalNode, arg0: NonterminalNode) => T;
@@ -446,6 +498,7 @@ export interface SQLActionDict<T> extends BaseActionDict<T> {
   between?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   in?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   like?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  ilike?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   unknown?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   case?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   when?: (this: NonterminalNode, arg0: NonterminalNode) => T;

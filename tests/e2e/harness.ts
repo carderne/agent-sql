@@ -35,7 +35,6 @@ export async function testOneAttack(query: Query, client: Client) {
     if (!(san.error instanceof SanitiseError)) {
       throw new Error("SQL parsing or something else failed", { cause: san.error });
     }
-    console.log(san.error.message);
     expect(query.expectPassSan).toBe(false);
     return;
   }

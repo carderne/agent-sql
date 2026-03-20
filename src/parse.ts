@@ -10,11 +10,14 @@ import type {
   ColumnRef,
   ComparisonOperator,
   Distinct,
+  DistinctOn,
   FuncCall,
   FuncCallArg,
   GroupByClause,
   HavingClause,
   IsBoolTarget,
+  JsonbOp,
+  PgvectorOp,
   JoinClause,
   JoinCondition,
   JoinType,
@@ -36,9 +39,12 @@ import type {
   WhereIn,
   WhereIsBool,
   WhereIsNull,
+  WhereJsonbOp,
+  WherePgvectorOp,
   WhereLike,
   WhereNot,
   WhereRoot,
+  WhereTsMatch,
   WhereUnaryMinus,
   WhereValue,
 } from "./ast";
@@ -67,8 +73,10 @@ semantics.addOperation<ASTNode>("toAST()", {
     limitClause,
     offsetClause,
   ) {
-    const distinct: Distinct | null =
-      distinctOpt.children.length > 0 ? (distinctOpt.children[0]!.toAST() as Distinct) : null;
+    const distinct: Distinct | DistinctOn | null =
+      distinctOpt.children.length > 0
+        ? (distinctOpt.children[0]!.toAST() as Distinct | DistinctOn)
+        : null;
     const cols = columns.toAST() as Column[];
     const from: SelectFrom = {
       type: "select_from",
@@ -231,6 +239,18 @@ semantics.addOperation<ASTNode>("toAST()", {
     return {
       name: name.toAST() as string,
     } satisfies TableName as ASTNode;
+  },
+
+  // PostgreSQL: DISTINCT ON (col1, col2, ...)
+  DistinctClause_on(_distinct, _on, _open, columns, _close) {
+    return {
+      type: "distinct_on",
+      columns: columns.asIteration().children.map((c) => c.toAST() as WhereValue),
+    } satisfies DistinctOn as ASTNode;
+  },
+
+  DistinctClause_plain(_distinct) {
+    return { type: "distinct" } satisfies Distinct as ASTNode;
   },
 
   Distinct(_distinct) {
@@ -522,6 +542,37 @@ semantics.addOperation<ASTNode>("toAST()", {
     } satisfies WhereLike as ASTNode;
   },
 
+  // PostgreSQL: case-insensitive LIKE
+  WhereComparison_ilike(expr, _ilike, pattern) {
+    return {
+      type: "where_like",
+      not: false,
+      op: "ilike" as LikeOp,
+      expr: expr.toAST() as WhereValue,
+      pattern: pattern.toAST() as WhereValue,
+    } satisfies WhereLike as ASTNode;
+  },
+
+  // PostgreSQL: case-insensitive NOT LIKE
+  WhereComparison_notIlike(expr, _not, _ilike, pattern) {
+    return {
+      type: "where_like",
+      not: true,
+      op: "ilike" as LikeOp,
+      expr: expr.toAST() as WhereValue,
+      pattern: pattern.toAST() as WhereValue,
+    } satisfies WhereLike as ASTNode;
+  },
+
+  // PostgreSQL: text search match (@@)
+  WhereComparison_tsMatch(left, _op, right) {
+    return {
+      type: "where_ts_match",
+      left: left.toAST() as WhereValue,
+      right: right.toAST() as WhereValue,
+    } satisfies WhereTsMatch as ASTNode;
+  },
+
   WhereComparison_notLike(expr, _not, _like, pattern) {
     return {
       type: "where_like",
@@ -586,11 +637,40 @@ semantics.addOperation<ASTNode>("toAST()", {
     } satisfies WhereArith as ASTNode;
   },
 
+  // PostgreSQL: JSONB operators
+  ExtOpExpr_jsonb(left, op, right) {
+    return {
+      type: "where_jsonb_op",
+      op: op.sourceString as JsonbOp,
+      left: left.toAST() as WhereValue,
+      right: right.toAST() as WhereValue,
+    } satisfies WhereJsonbOp as ASTNode;
+  },
+
+  // pgvector: distance operators
+  ExtOpExpr_pgvector(left, op, right) {
+    return {
+      type: "where_pgvector_op",
+      op: op.sourceString as PgvectorOp,
+      left: left.toAST() as WhereValue,
+      right: right.toAST() as WhereValue,
+    } satisfies WherePgvectorOp as ASTNode;
+  },
+
   UnaryExpr_neg(_minus, expr) {
     return {
       type: "where_unary_minus",
       expr: expr.toAST() as WhereValue,
     } satisfies WhereUnaryMinus as ASTNode;
+  },
+
+  // PostgreSQL: cast shorthand (expr::type)
+  PostfixExpr_castShorthand(expr, _colonColon, typeName) {
+    return {
+      type: "cast_expr",
+      expr: expr.toAST() as WhereValue,
+      typeName: typeName.sourceString,
+    } satisfies CastExpr as ASTNode;
   },
 
   AtomExpr_case(caseExpr) {

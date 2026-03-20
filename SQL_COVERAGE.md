@@ -178,18 +178,18 @@ Tracking SQL feature coverage in `src/sql.ohm` / `src/ast.ts`.
 
 ## PostgreSQL-Specific
 
-- [ ] `ILIKE` / `NOT ILIKE`
+- [x] `ILIKE` / `NOT ILIKE`
 - [ ] `~`, `~*`, `!~`, `!~*` (regex operators)
-- [ ] Cast shorthand: `expr::type`
-- [ ] `DISTINCT ON (…)`
+- [x] Cast shorthand: `expr::type`
+- [x] `DISTINCT ON (…)`
 - [ ] `RETURNING` clause
 - [ ] `ON CONFLICT DO NOTHING` / `DO UPDATE SET …` (upsert)
 - [ ] `ARRAY[…]` constructor / `ARRAY(SELECT …)`
 - [ ] `ANY(array)` / `ALL(array)`
 - [ ] Array subscript: `arr[1]`, `arr[1:3]`
 - [ ] Array operators: `@>`, `<@`, `&&`
-- [ ] JSON/JSONB operators: `->`, `->>`, `#>`, `#>>`, `?`, `?|`, `?&`, `@>`
-- [ ] Text-search operators: `@@`, `to_tsvector`, `to_tsquery`
+- [x] JSON/JSONB operators: `->`, `->>`, `#>`, `#>>`, `?`, `?|`, `?&`, `@>`
+- [x] Text-search operators: `@@`, `to_tsvector`, `to_tsquery`
 - [ ] `AT TIME ZONE`
 - [ ] `GENERATED ALWAYS AS` (computed columns)
 - [ ] `FETCH FIRST … ROWS WITH TIES`
@@ -198,3 +198,14 @@ Tracking SQL feature coverage in `src/sql.ohm` / `src/ast.ts`.
 - [ ] `UNNEST(array)` in FROM
 - [ ] `WITH name AS MATERIALIZED (…)` hint
 - [ ] Positional parameters (`$1`, `$2`, …)
+
+---
+
+## pgvector
+
+- [x] `<->` L2 distance
+- [x] `<#>` (negative) inner product
+- [x] `<=>` cosine distance
+- [x] `<+>` L1 distance
+- [x] `<~>` Hamming distance (binary vectors)
+- [x] `<%>` Jaccard distance (binary vectors)

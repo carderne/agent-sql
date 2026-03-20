@@ -185,6 +185,67 @@ const queries: Query[] = [
     `,
     expectPassSan: false,
   },
+  {
+    name: "ilike-wildcard-probe",
+    sql: `
+    select message.secret from organization
+    join "user" on organization.id = "user".organization_id
+    join message on message.user_id = "user".id
+    where message.secret ilike '%'
+    `,
+    expectPassSan: true,
+  },
+  {
+    name: "cast-shorthand-guard-bypass",
+    sql: `
+    select message.secret from organization
+    join "user" on organization.id = "user".organization_id
+    join message on message.user_id = "user".id
+    where organization.id::text = '2'
+    `,
+    expectPassSan: true,
+  },
+  {
+    name: "distinct-on-secret",
+    sql: `
+    select distinct on (message.secret) message.secret from organization
+    join "user" on organization.id = "user".organization_id
+    join message on message.user_id = "user".id
+    order by message.secret
+    `,
+    expectPassSan: true,
+  },
+  {
+    name: "cast-shorthand-or-bypass",
+    sql: `
+    select message.secret from organization
+    join "user" on organization.id = "user".organization_id
+    join message on message.user_id = "user".id
+    where organization.id::text = '1' or organization.id::text = '2'
+    `,
+    expectPassSan: true,
+  },
+  {
+    name: "where-target-other-org-user",
+    sql: `
+    select message.secret from organization
+    join "user" on organization.id = "user".organization_id
+    join message on message.user_id = "user".id
+    where message.user_id = 2
+    `,
+    expectPassSan: true,
+  },
+  {
+    name: "having-ilike-secret-probe",
+    sql: `
+    select case when count(*) > 0 then 'yes' else 'no' end from organization
+    join "user" on organization.id = "user".organization_id
+    join message on message.user_id = "user".id
+    group by message.secret
+    having message.secret ilike '%secret%'
+    `,
+    expectPassSan: true,
+  },
 ];
 
 const singleQuery: Query = {
