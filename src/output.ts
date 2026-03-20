@@ -317,7 +317,7 @@ function handleColumnExpr(node: ColumnExpr): string {
     case "wildcard":
       return "*";
     case "qualified_wildcard":
-      return `${node.table}.*`;
+      return `"${node.table}".*`;
     case "expr":
       return r(node.expr!);
     default:

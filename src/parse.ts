@@ -117,6 +117,9 @@ semantics.addOperation<ASTNode>("toAST()", {
   },
 
   ColumnEntry_aliased(expr, _as, alias) {
+    if (alias.sourceString.startsWith('"')) {
+      throw new SanitiseError("Quoted column aliases are not supported");
+    }
     return {
       type: "column",
       expr: expr.toAST() as ColumnExpr,
@@ -148,6 +151,9 @@ semantics.addOperation<ASTNode>("toAST()", {
   },
 
   FuncCall(name, _open, args, _close) {
+    if (name.sourceString.startsWith('"')) {
+      throw new SanitiseError("Quoted function names are not supported");
+    }
     return {
       type: "func_call",
       name: name.toAST() as string,

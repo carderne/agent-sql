@@ -8,7 +8,7 @@ test("round-trips a full statement", () => {
   const sql =
     "SELECT *, foo, mytable.bar, mytable.baz AS qux, mytable.* FROM myschema.mytable WHERE status = 'active' LIMIT 10";
   expect(outputSql(parseSql(sql).unwrap())).toBe(
-    `SELECT *, "foo", "mytable"."bar", "mytable"."baz" AS qux, mytable.* FROM "myschema"."mytable" WHERE "status" = 'active' LIMIT 10`,
+    `SELECT *, "foo", "mytable"."bar", "mytable"."baz" AS qux, "mytable".* FROM "myschema"."mytable" WHERE "status" = 'active' LIMIT 10`,
   );
 });
 
