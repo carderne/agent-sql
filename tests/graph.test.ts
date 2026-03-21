@@ -1,6 +1,6 @@
 import { expect, test } from "vite-plus/test";
 
-import { resolveGuardAliases, insertNeededGuardJoins } from "../src/graph";
+import { insertNeededGuardJoins } from "../src/graph";
 import type { WhereGuard } from "../src/guard";
 import { defineSchema } from "../src/joins";
 import { outputSql } from "../src/output";
@@ -13,24 +13,6 @@ const schema = defineSchema({
   key: { id: null, org_id: { ft: "org", fc: "id" } },
 });
 
-test("resolveGuardAliases returns guard with aliases for FK columns", () => {
-  const guards: WhereGuard[] = [{ table: "org", column: "id", value: 1 }];
-
-  const result = resolveGuardAliases(schema, guards).unwrap();
-
-  expect(result).toEqual([
-    {
-      table: "org",
-      column: "id",
-      value: 1,
-      aliases: [
-        { table: "user", column: "org_id" },
-        { table: "key", column: "org_id" },
-      ],
-    },
-  ]);
-});
-
 const guards: WhereGuard[] = [{ table: "org", column: "id", value: 1 }];
 
 test("resolveGuardJoins adds intermediate joins to reach guard table", () => {
@@ -40,7 +22,7 @@ test("resolveGuardJoins adds intermediate joins to reach guard table", () => {
   const sql = outputSql(result);
 
   expect(sql).toBe(
-    'SELECT * FROM "message" INNER JOIN "user" ON "user"."id" = "message"."user_id" INNER JOIN "org" ON "org"."id" = "user"."org_id"',
+    'SELECT "message".* FROM "message" INNER JOIN "user" ON "user"."id" = "message"."user_id" INNER JOIN "org" ON "org"."id" = "user"."org_id"',
   );
 });
 
@@ -59,7 +41,29 @@ test("resolveGuardJoins adds single join for directly linked table", () => {
   const result = insertNeededGuardJoins(ast, schema, guards, true).unwrap();
   const sql = outputSql(result);
 
-  expect(sql).toBe('SELECT * FROM "user" INNER JOIN "org" ON "org"."id" = "user"."org_id"');
+  expect(sql).toBe('SELECT "user".* FROM "user" INNER JOIN "org" ON "org"."id" = "user"."org_id"');
+});
+
+test("resolveGuardJoins qualifies wildcard per original table when query has existing joins", () => {
+  const ast = parseSql("SELECT * FROM message JOIN user ON user.id = message.user_id").unwrap();
+
+  const result = insertNeededGuardJoins(ast, schema, guards, true).unwrap();
+  const sql = outputSql(result);
+
+  expect(sql).toBe(
+    'SELECT "message".*, "user".* FROM "message" INNER JOIN "user" ON "user"."id" = "message"."user_id" INNER JOIN "org" ON "org"."id" = "user"."org_id"',
+  );
+});
+
+test("resolveGuardJoins leaves named columns unchanged", () => {
+  const ast = parseSql("SELECT message.id FROM message").unwrap();
+
+  const result = insertNeededGuardJoins(ast, schema, guards, true).unwrap();
+  const sql = outputSql(result);
+
+  expect(sql).toBe(
+    'SELECT "message"."id" FROM "message" INNER JOIN "user" ON "user"."id" = "message"."user_id" INNER JOIN "org" ON "org"."id" = "user"."org_id"',
+  );
 });
 
 test("resolveGuardJoins errors when no path exists", () => {

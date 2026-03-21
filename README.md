@@ -4,20 +4,20 @@ Sanitise agent-written SQL for multi-tenant DBs.
 
 You provide a tenant ID, and the agent supplies the query.
 
-agent-sql works by fully parsing the supplied SQL query into an AST.
-The grammar ONLY accepts `SELECT` statements. Anything else is an error.
-CTEs and other complex things that we aren't confident of securing: error.
-
-It ensures that that the needed tenant table is somewhere in the query,
-and adds a `WHERE` clause ensuring that only values from the supplied ID are returned.
-Then it checks that the tables and `JOIN`s follow the schema, preventing sneaky joins.
-
-Function calls also go through a whitelist (configurable).
-
-Finally, we throw in a `LIMIT` clause (configurable) to prevent accidental LLM denial-of-service.
-
 Apparently this is how [Trigger.dev does it](https://x.com/mattaitken/status/2033928542975639785).
 And [Cloudflare](https://x.com/thomas_ankcorn/status/2033931057133748330).
+
+## How it works
+
+agent-sql works by fully parsing the supplied SQL query into an AST and transforming it:
+
+- **Only `SELECT`:** it's impossible to insert, drop or anything else.
+- **Reduced subset:** CTEs, subqueries and other tricky things are rejected.
+- **Limited functions:** passed through a (configurable) whitelist.
+- **No DoS:** a default `LIMIT` is applied, but can be adjusted.
+- **`WHERE` guards:** insert multiple tenant/ownership conditions to be inserted.
+- **`JOIN`s added:** if needed to reach the guard tenant tables (save on tokens).
+- **No sneaky joins:** no `join secrets on true`. We have your back.
 
 ## Quickstart
 
@@ -28,16 +28,14 @@ npm install agent-sql
 ```ts
 import { agentSql } from "agent-sql";
 
-const sql = agentSql(`SELECT * FROM msg`, "msg.user_id", 123);
+const sql = agentSql(`SELECT * FROM msg`, "msg.tenant_id", 123);
 
 console.log(sql);
 // SELECT *
 // FROM msg
-// WHERE msg.user_id = 123
+// WHERE msg.tenant_id = 123
 // LIMIT 10000
 ```
-
-`agent-sql` parses the SQL, enforces a mandatory equality filter on the given column as the outermost `AND` condition (so it cannot be short-circuited by agent-supplied `OR` clauses), and returns the sanitised SQL string.
 
 ## Usage
 

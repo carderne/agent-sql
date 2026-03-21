@@ -1,57 +1,8 @@
-import type { JoinClause, SelectStatement } from "./ast";
+import type { Column, JoinClause, SelectStatement } from "./ast";
 import { SanitiseError } from "./errors";
-import type { GuardCol, GuardVal, WhereGuard } from "./guard";
+import type { WhereGuard } from "./guard";
 import { type Schema } from "./joins";
 import { Err, Ok, type Result } from "./result";
-
-export type WhereGuardAliases = GuardCol & {
-  value: GuardVal;
-  aliases: GuardCol[];
-};
-/*
- * TODO: Not used currently, as resolveGuardJoins achieves the same thing
- * in a more useful way.
- * Use the supplied schema to find equivalent table.column pairs as those supplied in the guards.
- *
- * Eg with this schema:
- * {
- *   org: { id: null },
- *   user: { org_id: { ft: "org", fc: "id" } },
- * }
- *
- * And this guard: { "org.id": 1 }
- *
- * Will resolve "user.org_id" as an alias.
- */
-
-export function resolveGuardAliases(
-  schema: Schema,
-  guards: WhereGuard[],
-): Result<WhereGuardAliases[]> {
-  const res: WhereGuardAliases[] = [];
-
-  for (const guard of guards) {
-    const table = (schema as Record<string, Record<string, unknown>>)[guard.table];
-    if (!table || !(guard.column in table)) {
-      return Err(new SanitiseError(`Guard references unknown ${guard.table}.${guard.column}`));
-    }
-
-    const aliases: GuardCol[] = [];
-    for (const [tName, cols] of Object.entries(schema as Record<string, Record<string, unknown>>)) {
-      for (const [cName, def] of Object.entries(cols)) {
-        if (def && typeof def === "object" && "ft" in def && "fc" in def) {
-          if (def.ft === guard.table && def.fc === guard.column) {
-            aliases.push({ table: tName, column: cName });
-          }
-        }
-      }
-    }
-
-    res.push({ ...guard, aliases });
-  }
-
-  return Ok(res);
-}
 
 export function insertNeededGuardJoins(
   ast: SelectStatement,
@@ -88,6 +39,7 @@ function resolveGraphForJoins(
     haveTables.add(join.table.name);
   }
 
+  const originalTables = new Set(haveTables);
   const adj = buildAdjacency(schema);
   const newJoins: JoinClause[] = [];
 
@@ -115,8 +67,11 @@ function resolveGraphForJoins(
     }
   }
 
-  if (newJoins.length === 0) return Ok(ast);
-  return Ok({ ...ast, joins: [...ast.joins, ...newJoins] });
+  if (newJoins.length === 0) {
+    return Ok(ast);
+  }
+  const columns = qualifyWildcards(ast.columns, originalTables);
+  return Ok({ ...ast, columns, joins: [...ast.joins, ...newJoins] });
 }
 
 interface Edge {
@@ -211,4 +166,26 @@ function edgeToJoin(edge: Edge, fromTable: string): JoinClause {
       },
     },
   };
+}
+
+// Replace bare wildcards (*) with qualified wildcards (table.*)
+// so that auto-joined tables don't leak extra columns to the caller.
+function qualifyWildcards(columns: Column[], tables: Set<string>): Column[] {
+  const hasBareWildcard = columns.some((c) => c.expr.kind === "wildcard");
+  if (!hasBareWildcard) return columns;
+
+  const qualified: Column[] = [];
+  for (const col of columns) {
+    if (col.expr.kind === "wildcard") {
+      for (const table of tables) {
+        qualified.push({
+          type: "column",
+          expr: { type: "column_expr", kind: "qualified_wildcard", table },
+        });
+      }
+    } else {
+      qualified.push(col);
+    }
+  }
+  return qualified;
 }
