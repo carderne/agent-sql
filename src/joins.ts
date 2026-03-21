@@ -72,11 +72,21 @@ export function checkJoinColumns(
     // 2. Check whether that table is a valid join target for this table
     // 3. Check whether the correct column is used
 
-    const { joining, foreign } = getJoinTableRef(
-      join.table.name,
-      join.condition.expr.left.ref,
-      join.condition.expr.right.ref,
-    );
+    const leftRef = join.condition.expr.left.ref;
+    const rightRef = join.condition.expr.right.ref;
+
+    // At least one side of the ON clause must reference the join table itself.
+    // Without this check, a query like `JOIN key ON org.id = user.org_id`
+    // would slip through — key is never mentioned in the ON predicate.
+    if (leftRef.table !== join.table.name && rightRef.table !== join.table.name) {
+      return Err(
+        new SanitiseError(
+          `JOIN ${join.table.name} ON clause does not reference ${join.table.name}`,
+        ),
+      );
+    }
+
+    const { joining, foreign } = getJoinTableRef(join.table.name, leftRef, rightRef);
 
     // Now we have joining ref and foreign ref well specified
     // Check that the joining ref uses a permitted column name

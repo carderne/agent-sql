@@ -210,6 +210,15 @@ describe("checkJoinColumns", () => {
     const result = checkJoinColumns(ast, schema);
     expect(result.ok).toBe(false);
   });
+
+  test("rejects join where ON clause does not reference the join table at all", () => {
+    // JOIN key, but the ON clause only references org and user — key is not
+    // mentioned. This should be blocked because key is not being joined on
+    // any of its own columns.
+    const ast = parseSql("SELECT * FROM user JOIN key ON org.id = user.org_id").unwrap();
+    const result = checkJoinColumns(ast, schema);
+    expect(result.ok).toBe(false);
+  });
 });
 
 // ============================================================
