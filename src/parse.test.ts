@@ -1,6 +1,6 @@
 import { expect, test } from "vite-plus/test";
 
-import { parseSql } from "../src";
+import { parseSql } from ".";
 
 test("parses full example with all column types", () => {
   const sql = `

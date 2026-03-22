@@ -1,7 +1,7 @@
 import { expect, test } from "vite-plus/test";
 
-import { parseSql } from "../src";
-import { applyGuards } from "../src/guard";
+import { parseSql } from ".";
+import { applyGuards } from "./guard";
 
 test("sanitise adds WHERE clause when none exists", () => {
   const ast = parseSql("SELECT foo FROM mytable").unwrap();

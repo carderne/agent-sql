@@ -1,10 +1,10 @@
 import { expect, test } from "vite-plus/test";
 
-import { insertNeededGuardJoins } from "../src/graph";
-import type { WhereGuard } from "../src/guard";
-import { defineSchema } from "../src/joins";
-import { outputSql } from "../src/output";
-import { parseSql } from "../src/parse";
+import { insertNeededGuardJoins } from "./graph";
+import type { WhereGuard } from "./guard";
+import { defineSchema } from "./joins";
+import { outputSql } from "./output";
+import { parseSql } from "./parse";
 
 const schema = defineSchema({
   org: { id: null },

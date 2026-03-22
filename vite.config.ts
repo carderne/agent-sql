@@ -23,4 +23,10 @@ export default defineConfig({
     ],
   },
   fmt: {},
+  test: {
+    coverage: {
+      provider: "v8",
+      exclude: ["tests/**"],
+    },
+  },
 });

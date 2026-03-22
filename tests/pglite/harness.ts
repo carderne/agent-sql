@@ -1,8 +1,8 @@
 import type { Client } from "pg";
 import { expect } from "vite-plus/test";
 
-import { defineSchema, createAgentSql } from "../../../src";
-import { SanitiseError } from "../../../src/errors";
+import { defineSchema, createAgentSql } from "../../src";
+import { SanitiseError } from "../../src/errors";
 import { secret } from "../secret";
 
 const schema = defineSchema({

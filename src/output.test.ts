@@ -1,8 +1,8 @@
 import { expect, test } from "vite-plus/test";
 
-import { parseSql } from "../src";
-import { applyGuards } from "../src/guard";
-import { outputSql } from "../src/output";
+import { parseSql } from ".";
+import { applyGuards } from "./guard";
+import { outputSql } from "./output";
 
 test("round-trips a full statement", () => {
   const sql =

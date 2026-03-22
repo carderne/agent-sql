@@ -1,6 +1,6 @@
 import { expect, test } from "vite-plus/test";
 
-import { agentSql, createAgentSql, defineSchema } from "../src";
+import { agentSql, createAgentSql, defineSchema } from ".";
 
 test("agentSql with minimum args", () => {
   expect(agentSql("SELECT * FROM msg", "msg.user_id", 123)).toBe(

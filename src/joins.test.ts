@@ -1,7 +1,7 @@
 import { expect, test, describe } from "vite-plus/test";
 
-import { checkJoinContinuity, checkJoinColumns, defineSchema } from "../src/joins";
-import { parseSql } from "../src/parse";
+import { checkJoinContinuity, checkJoinColumns, defineSchema } from "./joins";
+import { parseSql } from "./parse";
 
 // ============================================================
 // checkJoinColumns — schema-based join column validation

@@ -19,6 +19,8 @@ agent-sql works by fully parsing the supplied SQL query into an AST and transfor
 - **`JOIN`s added:** if needed to reach the guard tenant tables (save on tokens).
 - **No sneaky joins:** no `join secrets on true`. We have your back.
 
+I plan to support inserts, updates, CTEs, subqueries once I can convincingly make them safe.
+
 ## Quickstart
 
 ```bash
