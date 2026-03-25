@@ -2,7 +2,7 @@ import { DatabaseSync } from "node:sqlite";
 
 import { afterAll, beforeAll, describe, test } from "vite-plus/test";
 
-import { createAgentSql } from "../src";
+import { agentSql } from "../src";
 import { ddl, Query, schema, testOneAttack } from "./harness";
 
 const queries: Query[] = [
@@ -152,7 +152,8 @@ const singleQuery: Query = {
 
 describe("attack-pglite", () => {
   let db: DatabaseSync;
-  const agentSql = createAgentSql(schema, { "tenant.id": 1 }, { throws: false, db: "sqlite" });
+  const sanitise = (sql: string) =>
+    agentSql(sql, { "tenant.id": 1 }, schema, { throws: false, db: "sqlite" });
 
   beforeAll(() => {
     db = new DatabaseSync(":memory:");
@@ -168,11 +169,11 @@ describe("attack-pglite", () => {
 
   for (const query of queries) {
     test(query.name, async () => {
-      await testOneAttack(query, db, agentSql);
+      await testOneAttack(query, db, sanitise);
     });
   }
 
   test("new-attack", async () => {
-    await testOneAttack(singleQuery, db, agentSql);
+    await testOneAttack(singleQuery, db, sanitise);
   });
 });

@@ -31,17 +31,3 @@ export function Ok<T>(data: T): Success<T> {
     },
   };
 }
-
-// These overloads cause problems at callsite because true|false !== boolean
-// export function returnOrThrow<T>(result: Result<T>, throws: true): Result<T>;
-// export function returnOrThrow<T>(result: Success<T>, throws: false): T;
-// export function returnOrThrow(result: Failure<string>, throws: false): never;
-export function returnOrThrow<T>(result: Result<T>, throws: boolean): Result<T> | T | never {
-  if (!throws) {
-    return result;
-  }
-  if (result.ok) {
-    return result.data;
-  }
-  throw result.error;
-}

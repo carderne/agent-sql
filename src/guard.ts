@@ -26,28 +26,6 @@ export type WhereGuard = GuardCol & {
 };
 
 /*
- * Allows columns to be specified as either:
- * "table.column"
- * OR
- * "schema.table.column"
- */
-export type OneOrTwoDots<S extends string> = S extends `${infer A}.${infer B}.${infer C}`
-  ? A extends `${string}.${string}`
-    ? never
-    : B extends `${string}.${string}`
-      ? never
-      : C extends `${string}.${string}`
-        ? never
-        : S
-  : S extends `${infer A}.${infer B}`
-    ? A extends `${string}.${string}`
-      ? never
-      : B extends `${string}.${string}`
-        ? never
-        : S
-    : never;
-
-/*
  * Given a schema object (from `defineSchema`), produces a union of all valid
  * "table.column" strings, e.g. `"orders.tenant_id" | "orders.id" | …`
  */
@@ -69,9 +47,6 @@ export function applyGuards(
  * API
  */
 export function resolveGuards(guards: Record<string, GuardVal>): Result<WhereGuard[]> {
-  if (guards.length === 0) {
-    return Err(new AgentSqlError("At least one guard must be provided."));
-  }
   const result: WhereGuard[] = [];
 
   for (const [column, value] of Object.entries(guards)) {

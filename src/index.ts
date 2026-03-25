@@ -3,7 +3,6 @@ import { insertNeededGuardJoins } from "./graph";
 import {
   applyGuards,
   resolveGuards,
-  type OneOrTwoDots,
   type GuardVal,
   type SchemaGuardKeys,
   DEFAULT_LIMIT,
@@ -11,59 +10,63 @@ import {
 import { defineSchema, validateJoins, type Schema } from "./joins";
 import { outputSql } from "./output";
 import { parseSql } from "./parse";
-import { Ok, returnOrThrow, type Result } from "./result";
+import { Ok, type Result } from "./result";
 
 export { parseSql, applyGuards as sanitiseSql, outputSql, defineSchema };
 export type { DbType } from "./functions";
 
 /*
- * A simple "README-friendly" API that doesn't require a schema to be provided
- * If the schema is not provided, JOINs will be rejected
- * (as they cannot be validated to be safe)
- *
- * This function always throws on errors
- */
-export function agentSql<S extends string>(
-  sql: string,
-  column: S & OneOrTwoDots<S>,
-  value: GuardVal,
-  {
-    schema,
-    autoJoin = true,
-    limit = DEFAULT_LIMIT,
-    pretty = false,
-    db = DEFAULT_DB,
-    allowExtraFunctions = [],
-  }: {
-    schema?: Schema;
-    autoJoin?: boolean;
-    limit?: number;
-    pretty?: boolean;
-    db?: DbType;
-    allowExtraFunctions?: string[];
-  } = {},
-): string {
-  const guards = { [column]: value };
-  return privateAgentSql(sql, {
-    guards,
-    schema,
-    autoJoin,
-    limit,
-    pretty,
-    db,
-    allowExtraFunctions,
-    throws: true,
-  });
-}
-
-/*
- * Factory function for agentSql re-use
+ * agentSql uses the provided arguments to sanitise and harden a SQL query.
  *
  * ```ts
- * const schema = defineSchema({ orders: { tenant_id: null } });
- * const agentSql = createAgentSql(schema, { "orders.tenant_id": "t42" });
- * const sql = agentSql("SELECT * ...");
+ * const schema = defineSchema({ tenant: { id: null } });
+ * const sanitised = agentSql("SELEcT * FROM tenant", { "tenant.id": 123 }, schema);
  * ```
+ *
+ * Notes on arguments:
+ *
+ * # guards
+ * Specifies the tenant/ownership locks to enforce.
+ * If `guards` is EMPTY, no tenant isolation will be enforced.
+ *
+ * ```json
+ * { "tenant.id": 3, "user.id": 5 }
+ * ```
+ *
+ * will add
+ *
+ * ```sql
+ * WHERE tenant.id = 3 AND user.id = 5
+ * ```
+ *
+ * to the query, and ensure that `tenant` and `user` tables are joined to the query.
+ *
+ * # schema
+ * Defines which tables and joins are permitted.
+ * If no schema is provided, no JOINS will be permitted.
+ *
+ * # autoJoin
+ * Whether agent-sql will automatically insert needed JOINs to reach guard tables.
+ * Default true
+ *
+ * # limit
+ * What `LIMIT n` value to insert.
+ * Default 10000
+ *
+ * # pretty
+ * Whether the pretty-print the SQL output.
+ * Default false
+ *
+ * # throws
+ * Whether to throw Exceptions or return a Result.
+ * Default true
+ *
+ * # db
+ * The DB being used. Only used to control default function allowlist.
+ * Default postgres
+ *
+ * # allowExtraFunctions
+ * List of additional functions to whitelist.
  *
  * Guard keys are type-checked against the schema: only `"table.column"`
  * combinations that actually exist in the schema are accepted.
@@ -71,9 +74,10 @@ export function agentSql<S extends string>(
  * If `throws: true` is passed (the default), it will throw on errors.
  * Otherwise it will return a Result type with an `ok` field as discriminator.
  */
-export function createAgentSql<T extends Schema, S extends SchemaGuardKeys<T>>(
-  schema: T,
+export function agentSql<T extends Schema, S extends SchemaGuardKeys<T>>(
+  sql: string,
   guards: Record<S, GuardVal>,
+  schema: T,
   opts: {
     autoJoin?: boolean;
     limit?: number;
@@ -82,10 +86,11 @@ export function createAgentSql<T extends Schema, S extends SchemaGuardKeys<T>>(
     db?: DbType;
     allowExtraFunctions?: string[];
   },
-): (expr: string) => Result<string>;
-export function createAgentSql<T extends Schema, S extends SchemaGuardKeys<T>>(
-  schema: T,
+): Result<string>;
+export function agentSql<T extends Schema, S extends SchemaGuardKeys<T>>(
+  sql: string,
   guards: Record<S, GuardVal>,
+  schema?: T,
   opts?: {
     autoJoin?: boolean;
     limit?: number;
@@ -94,10 +99,11 @@ export function createAgentSql<T extends Schema, S extends SchemaGuardKeys<T>>(
     db?: DbType;
     allowExtraFunctions?: string[];
   },
-): (expr: string) => string;
-export function createAgentSql<T extends Schema, S extends SchemaGuardKeys<T>>(
-  schema: T,
+): string;
+export function agentSql<T extends Schema, S extends SchemaGuardKeys<T>>(
+  sql: string,
   guards: Record<S, GuardVal>,
+  schema?: T,
   {
     autoJoin = true,
     limit = DEFAULT_LIMIT,
@@ -113,57 +119,28 @@ export function createAgentSql<T extends Schema, S extends SchemaGuardKeys<T>>(
     db?: DbType;
     allowExtraFunctions?: string[];
   } = {},
-): (expr: string) => Result<string> | string {
-  return (expr: string) =>
-    throws
-      ? privateAgentSql(expr, {
-          guards,
-          schema,
-          autoJoin,
-          limit,
-          pretty,
-          db,
-          allowExtraFunctions,
-          throws,
-        })
-      : privateAgentSql(expr, {
-          guards,
-          schema,
-          autoJoin,
-          limit,
-          pretty,
-          db,
-          allowExtraFunctions,
-          throws,
-        });
+): Result<string> | string {
+  const res = privateAgentSql(sql, {
+    guards,
+    schema,
+    autoJoin,
+    limit,
+    pretty,
+    db,
+    allowExtraFunctions,
+  });
+  if (throws === true) {
+    if (res.ok) {
+      return res.data;
+    }
+    throw res.error;
+  }
+  return res;
 }
 
-function privateAgentSql(
-  sql: string,
-  _: {
-    guards: Record<string, GuardVal>;
-    schema: Schema | undefined;
-    autoJoin: boolean;
-    limit: number;
-    pretty: boolean;
-    db: DbType;
-    allowExtraFunctions: string[];
-    throws: false;
-  },
-): Result<string>;
-function privateAgentSql(
-  sql: string,
-  _: {
-    guards: Record<string, GuardVal>;
-    schema: Schema | undefined;
-    autoJoin: boolean;
-    limit: number;
-    pretty: boolean;
-    db: DbType;
-    allowExtraFunctions: string[];
-    throws: true;
-  },
-): string;
+/*
+ * Core logic of the overall agent-sql process. Not used externally.
+ */
 function privateAgentSql(
   sql: string,
   {
@@ -174,7 +151,6 @@ function privateAgentSql(
     pretty,
     db,
     allowExtraFunctions,
-    throws,
   }: {
     guards: Record<string, GuardVal>;
     schema: Schema | undefined;
@@ -183,22 +159,20 @@ function privateAgentSql(
     pretty: boolean;
     db: DbType;
     allowExtraFunctions: string[];
-    throws: boolean;
   },
-): Result<string> | string {
+): Result<string> {
   const guards = resolveGuards(guardsRaw);
-  if (!guards.ok) throw guards.error;
+  if (!guards.ok) return guards;
   const ast = parseSql(sql);
-  if (!ast.ok) return returnOrThrow(ast, throws);
+  if (!ast.ok) return ast;
   const ast2 = validateJoins(ast.data, schema);
-  if (!ast2.ok) return returnOrThrow(ast2, throws);
+  if (!ast2.ok) return ast2;
   const ast3 = checkFunctions(ast2.data, db, allowExtraFunctions);
-  if (!ast3.ok) return returnOrThrow(ast3, throws);
+  if (!ast3.ok) return ast3;
   const ast4 = insertNeededGuardJoins(ast3.data, schema, guards.data, autoJoin);
-  if (!ast4.ok) return returnOrThrow(ast4, throws);
+  if (!ast4.ok) return ast4;
   const san = applyGuards(ast4.data, guards.data, limit);
-  if (!san.ok) return returnOrThrow(san, throws);
+  if (!san.ok) return san;
   const res = outputSql(san.data, pretty);
-  if (throws) return res;
   return Ok(res);
 }

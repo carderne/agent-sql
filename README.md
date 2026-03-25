@@ -22,7 +22,11 @@ agent-sql works by fully parsing the supplied SQL query into an AST and transfor
 - **`JOIN`s added:** if needed to reach the guard tenant tables (save on tokens).
 - **No sneaky joins:** no `join secrets on true`. We have your back.
 
-I plan to support inserts, updates, CTEs, subqueries once I can convincingly make them safe.
+## What's next
+
+- [ ] Support `INSERT`, `UPDATE`, even `DROP TABLE` as user-configurable options
+- [ ] Support CTEs, subqueries and more, once they can be fully hardened
+- [ ] Skills for common harnesses
 
 ## Quickstart
 
@@ -33,7 +37,7 @@ npm install agent-sql
 ```ts
 import { agentSql } from "agent-sql";
 
-const sql = agentSql("SELECT * FROM msg", "msg.tenant_id", 123);
+const sql = agentSql("SELECT * FROM msg", { "msg.tenant_id": 123 });
 
 console.log(sql);
 // SELECT *
@@ -47,11 +51,11 @@ console.log(sql);
 ### Define a schema
 
 In the simple example above, all `JOIN`s will be blocked.
-For agent-sql to know what joins and tables permit, you need to define a schema.
+For agent-sql to know what joins and tables to permit, you need to define a schema.
 Heads up: if you use Drizzle, you can just [use your Drizzle schema](#integration-with-ai-sdk-and-drizzle).
 
 ```ts
-import { createAgentSql, defineSchema } from "agent-sql";
+import { agentSql, defineSchema } from "agent-sql";
 
 // Define your schema.
 // Only the tables listed will be permitted
@@ -63,13 +67,10 @@ const schema = defineSchema({
 
 // Use your schema from above
 // Specify 1+ column->value pairs that will be enforced
-const agentSql = createAgentSql(schema, { "tenant.id": 123 });
-
-// Now use it
-const sql = agentSql("SELECT * FROM msg");
+const result = agentSql("SELECT * FROM msg", { "tenant.id": 123 }, schema);
 ```
 
-Outputs:
+Output:
 
 ```sql
 SELECT
@@ -96,6 +97,18 @@ JOIN danger                        -- disconnected from join graph
 WHERE true                         -- won't trick anyone
 ```
 
+### Make a closure
+
+You'll probably want to do something like the below in production.
+Mix and match to your taste.
+
+```ts
+const sanitise = (sql: string) => agentSql(sql, guards, schema);
+
+//later
+sanitise("SELECT * FROM foo");
+```
+
 ### Integration with AI SDK and Drizzle
 
 If you're using Drizzle, you can skip the schema step and use the one you already have!
@@ -105,8 +118,9 @@ Just pass it through, and `agentSql` will respect your schema.
 ```ts
 import { tool } from "ai";
 import { sql } from "drizzle-orm";
+import { z } from "zod";
 
-import { createAgentSql } from "agent-sql";
+import { agentSql } from "agent-sql";
 import { defineSchemaFromDrizzle } from "agent-sql/drizzle";
 
 import { db } from "@/db";
@@ -115,21 +129,21 @@ import * as drizzleSchema from "@/db/schema";
 // No need to re-enter your schema, we'll pull it in from Drizzle
 const schema = defineSchemaFromDrizzle(drizzleSchema);
 
-function makeSqlTool(tenantId: string) {
-  // Create a sanitiser function for this tenant
-  // Specify one or more column->value pairs that will be enforced
-  const agentSql = createAgentSql(schema, { "tenant.id": tenantId });
+// Create your closure
+const sanitise = (sql: string, tenantId: string) =>
+  agentSql(sql, { "tenant.id": tenantId }, schema);
 
+function makeSqlTool(tenantId: string) {
   return tool({
     description: "Run raw SQL against the DB",
     inputSchema: z.object({ query: z.string() }),
     execute: async ({ query }) => {
       // The LLM can pass any query it likes, we'll sanitise it if possible
       // and return helpful error messages if not
-      const sql = agentSql(query);
+      const safeQuery = sanitise(query, tenantId);
       // Now we can throw that straight at the db and be confident it'll only
       // return data from the specified tenant
-      return db.execute(sql.raw(sql));
+      return db.execute(sql.raw(safeQuery));
     },
   });
 }

@@ -1,7 +1,7 @@
 import { PGlite } from "@electric-sql/pglite";
 import { afterAll, beforeAll, describe, test } from "vite-plus/test";
 
-import { createAgentSql } from "../src";
+import { agentSql } from "../src";
 import { testOneAttack, Query, schema, ddl } from "./harness";
 
 const simpleSchemaQueries: Query[] = [
@@ -1044,7 +1044,8 @@ const singleQuery: Query = {
 
 describe("attack-pglite", () => {
   let db: PGlite;
-  const agentSql = createAgentSql(schema, { "tenant.id": 1 }, { throws: false, db: "pglite" });
+  const sanitise = (sql: string) =>
+    agentSql(sql, { "tenant.id": 1 }, schema, { throws: false, db: "pglite" });
 
   beforeAll(async () => {
     db = new PGlite();
@@ -1059,17 +1060,17 @@ describe("attack-pglite", () => {
 
   for (const query of simpleSchemaQueries) {
     test(query.name, async () => {
-      await testOneAttack(query, db, agentSql);
+      await testOneAttack(query, db, sanitise);
     });
   }
 
   for (const query of complexSchemaQueries) {
     test(query.name, async () => {
-      await testOneAttack(query, db, agentSql);
+      await testOneAttack(query, db, sanitise);
     });
   }
 
   test("new-attack", async () => {
-    await testOneAttack(singleQuery, db, agentSql);
+    await testOneAttack(singleQuery, db, sanitise);
   });
 });
