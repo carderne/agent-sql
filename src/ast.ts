@@ -1,5 +1,11 @@
+export type Statement = SelectStatement | InsertStatement | UpdateStatement;
+
 export type ASTNode =
   | SelectStatement
+  | InsertStatement
+  | UpdateStatement
+  | ValuesRow
+  | Assignment
   | Column
   | Alias
   | SelectFrom
@@ -315,4 +321,29 @@ export interface TableRef {
 export interface TableName {
   schema?: string;
   name: string;
+}
+
+export interface InsertStatement {
+  readonly type: "insert";
+  table: TableRef;
+  columns: string[] | null;
+  rows: ValuesRow[];
+}
+
+export interface ValuesRow {
+  readonly type: "values_row";
+  values: WhereValue[];
+}
+
+export interface UpdateStatement {
+  readonly type: "update";
+  table: TableRef;
+  assignments: Assignment[];
+  where: WhereRoot | null;
+}
+
+export interface Assignment {
+  readonly type: "assignment";
+  column: string;
+  value: WhereValue;
 }

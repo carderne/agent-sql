@@ -11,6 +11,7 @@ import type {
   FuncCall,
   GroupByClause,
   HavingClause,
+  InsertStatement,
   JoinClause,
   JoinCondition,
   LimitClause,
@@ -19,8 +20,10 @@ import type {
   OrderByItem,
   SelectFrom,
   SelectStatement,
+  Statement,
   TableRef,
   Terminal,
+  UpdateStatement,
   WhereAnd,
   WhereArith,
   WhereBetween,
@@ -40,7 +43,7 @@ import type {
 } from "./ast";
 import { unreachable } from "./utils";
 
-export function outputSql(ast: SelectStatement, pretty: boolean = false): string {
+export function outputSql(ast: Statement, pretty: boolean = false): string {
   const res = r(ast, pretty);
   if (pretty) {
     return res;
@@ -68,6 +71,14 @@ function r(node: ASTNode | Terminal, pretty: boolean = false): string {
   switch (node.type) {
     case "select":
       return handleSelect(node, pretty);
+    case "insert":
+      return handleInsert(node, pretty);
+    case "update":
+      return handleUpdate(node, pretty);
+    case "values_row":
+      return `(${rMap(node.values)})`;
+    case "assignment":
+      return `${node.column} = ${r(node.value)}`;
     case "select_from":
       return handleSelectFrom(node);
     case "join":
@@ -165,6 +176,19 @@ function handleSelect(node: SelectStatement, pretty: boolean): string {
     r(node.limit),
     r(node.offset),
   ].join(joiner);
+}
+
+function handleInsert(node: InsertStatement, pretty: boolean): string {
+  const cols = node.columns ? ` (${node.columns.join(", ")})` : "";
+  const joiner = pretty ? "\n" : " ";
+  return [`INSERT INTO ${r(node.table)}${cols}`, `VALUES ${rMap(node.rows, pretty)}`].join(joiner);
+}
+
+function handleUpdate(node: UpdateStatement, pretty: boolean): string {
+  const joiner = pretty ? "\n" : " ";
+  return [`UPDATE ${r(node.table)}`, `SET ${rMap(node.assignments)}`, r(node.where)]
+    .filter(Boolean)
+    .join(joiner);
 }
 
 function handleDistinct(_node: Distinct): string {

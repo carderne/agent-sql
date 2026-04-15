@@ -1,5 +1,22 @@
 SQL {
-  Statement = SelectStatement ";"?
+  Statement
+    = SelectStatement ";"?
+    | InsertStatement ";"?
+    | UpdateStatement ";"?
+
+  // --- INSERT ---
+
+  InsertStatement
+    = insert into TableName "(" NonemptyListOf<identifier, ","> ")" values NonemptyListOf<ValuesRow, ",">  -- withCols
+    | insert into TableName values NonemptyListOf<ValuesRow, ",">                                          -- noCols
+
+  ValuesRow = "(" NonemptyListOf<WhereValue, ","> ")"
+
+  // --- UPDATE ---
+
+  UpdateStatement = update TableName set NonemptyListOf<Assignment, ","> WhereClause?
+
+  Assignment = identifier "=" WhereValue
 
   SelectStatement
     = select DistinctClause? ColumnList from TableRef JoinClause* WhereClause? GroupByClause? HavingClause? OrderByClause? LimitClause? OffsetClause?
@@ -261,12 +278,18 @@ SQL {
   else     = caseInsensitive<"else">     ~identPart
   end_kw   = caseInsensitive<"end">      ~identPart
   cast     = caseInsensitive<"cast">     ~identPart
+  insert   = caseInsensitive<"insert">   ~identPart
+  into     = caseInsensitive<"into">     ~identPart
+  values   = caseInsensitive<"values">   ~identPart
+  update   = caseInsensitive<"update">   ~identPart
+  set      = caseInsensitive<"set">      ~identPart
 
   keyword = select | from | as | where | and | or | limit | not | null | is
           | join | inner | left | right | full | outer | cross | natural | on | using
           | order | by | asc | desc | nulls | first | last | offset | group | having | distinct
           | between | in | like | ilike | unknown
           | case | when | then | else | end_kw | cast
+          | insert | into | values | update | set
           | true_kw | false_kw
   identPart = alnum | "_"
 

@@ -209,3 +209,40 @@ Tracking SQL feature coverage in `src/sql.ohm` / `src/ast.ts`.
 - [x] `<+>` L1 distance
 - [x] `<~>` Hamming distance (binary vectors)
 - [x] `<%>` Jaccard distance (binary vectors)
+
+---
+
+## INSERT
+
+- [x] `INSERT INTO <table> VALUES (…)`
+- [x] `INSERT INTO <table> (col, …) VALUES (…)`
+- [x] Multi-row `VALUES (…), (…), …`
+- [x] Schema-qualified target table (`schema.table`)
+- [ ] Target table alias (`INSERT INTO t AS alias …`)
+- [ ] `INSERT INTO <table> [(cols)] SELECT …`
+- [ ] `DEFAULT` / `DEFAULT VALUES`
+- [ ] Expressions in `VALUES` (functions, arithmetic, casts, `NULL`)
+- [ ] `RETURNING <columns>` / `RETURNING *`
+- [ ] `ON CONFLICT DO NOTHING`
+- [ ] `ON CONFLICT (col, …) DO UPDATE SET … [WHERE …]`
+- [ ] `ON CONFLICT ON CONSTRAINT <name> …`
+- [ ] `EXCLUDED.col` reference in upsert `SET`
+- [ ] `WITH` / CTE before `INSERT`
+- [ ] `OVERRIDING SYSTEM VALUE` / `OVERRIDING USER VALUE`
+
+---
+
+## UPDATE
+
+- [x] `UPDATE <table> SET col = expr`
+- [x] Multiple assignments: `SET a = …, b = …`
+- [x] Schema-qualified target table (`schema.table`)
+- [ ] Target table alias (`UPDATE t AS alias …`)
+- [x] `WHERE <condition>` (full WHERE expression grammar)
+- [ ] RHS expressions: literals, column refs, arithmetic, functions, `CASE`, `CAST`
+- [ ] `SET col = DEFAULT`
+- [ ] Row/tuple assignment: `SET (a, b) = (expr, expr)`
+- [ ] Row/tuple assignment from subquery: `SET (a, b) = (SELECT …)`
+- [ ] `FROM <table(s)>` clause (update-with-join)
+- [ ] `RETURNING <columns>` / `RETURNING *`
+- [ ] `WITH` / CTE before `UPDATE`

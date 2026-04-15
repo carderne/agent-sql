@@ -13,6 +13,46 @@ import {
 
 export interface SQLActionDict<T> extends BaseActionDict<T> {
   Statement?: (this: NonterminalNode, arg0: NonterminalNode, arg1: IterationNode) => T;
+  InsertStatement_withCols?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: NonterminalNode,
+    arg2: NonterminalNode,
+    arg3: TerminalNode,
+    arg4: NonterminalNode,
+    arg5: TerminalNode,
+    arg6: NonterminalNode,
+    arg7: NonterminalNode,
+  ) => T;
+  InsertStatement_noCols?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: NonterminalNode,
+    arg2: NonterminalNode,
+    arg3: NonterminalNode,
+    arg4: NonterminalNode,
+  ) => T;
+  InsertStatement?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  ValuesRow?: (
+    this: NonterminalNode,
+    arg0: TerminalNode,
+    arg1: NonterminalNode,
+    arg2: TerminalNode,
+  ) => T;
+  UpdateStatement?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: NonterminalNode,
+    arg2: NonterminalNode,
+    arg3: NonterminalNode,
+    arg4: IterationNode,
+  ) => T;
+  Assignment?: (
+    this: NonterminalNode,
+    arg0: NonterminalNode,
+    arg1: TerminalNode,
+    arg2: NonterminalNode,
+  ) => T;
   SelectStatement?: (
     this: NonterminalNode,
     arg0: NonterminalNode,
@@ -506,6 +546,11 @@ export interface SQLActionDict<T> extends BaseActionDict<T> {
   else?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   end_kw?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   cast?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  insert?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  into?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  values?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  update?: (this: NonterminalNode, arg0: NonterminalNode) => T;
+  set?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   keyword?: (this: NonterminalNode, arg0: NonterminalNode) => T;
   identPart?: (this: NonterminalNode, arg0: NonterminalNode | TerminalNode) => T;
   space?: (this: NonterminalNode, arg0: NonterminalNode | TerminalNode) => T;

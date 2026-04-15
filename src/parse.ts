@@ -2,6 +2,11 @@ import type {
   ASTNode,
   Alias,
   ArithOp,
+  Assignment,
+  InsertStatement,
+  Statement,
+  UpdateStatement,
+  ValuesRow,
   CaseExpr,
   CaseWhen,
   CastExpr,
@@ -55,8 +60,58 @@ import grammar, { type SQLSemantics } from "./sql.ohm-bundle";
 const semantics: SQLSemantics = grammar.createSemantics();
 
 semantics.addOperation<ASTNode>("toAST()", {
-  Statement(select, _semi) {
-    return select.toAST();
+  Statement(stmt, _semi) {
+    return stmt.toAST();
+  },
+
+  InsertStatement_withCols(_insert, _into, tableName, _open, colList, _close, _values, rows) {
+    const tn = tableName.toAST() as TableName;
+    return {
+      type: "insert",
+      table: { type: "table_ref", ...tn },
+      columns: colList.asIteration().children.map((c) => c.toAST() as string),
+      rows: rows.asIteration().children.map((r) => r.toAST() as ValuesRow),
+    } satisfies InsertStatement as ASTNode;
+  },
+
+  InsertStatement_noCols(_insert, _into, tableName, _values, rows) {
+    const tn = tableName.toAST() as TableName;
+    return {
+      type: "insert",
+      table: { type: "table_ref", ...tn },
+      columns: null,
+      rows: rows.asIteration().children.map((r) => r.toAST() as ValuesRow),
+    } satisfies InsertStatement as ASTNode;
+  },
+
+  ValuesRow(_open, list, _close) {
+    return {
+      type: "values_row",
+      values: list.asIteration().children.map((v) => v.toAST() as WhereValue),
+    } satisfies ValuesRow as ASTNode;
+  },
+
+  UpdateStatement(_update, tableName, _set, assignments, whereClause) {
+    const tn = tableName.toAST() as TableName;
+    const whereIter = whereClause.children;
+    const where: WhereRoot | null =
+      whereIter.length > 0
+        ? { type: "where_root", inner: whereIter[0]!.toAST() as WhereExpr }
+        : null;
+    return {
+      type: "update",
+      table: { type: "table_ref", ...tn },
+      assignments: assignments.asIteration().children.map((a) => a.toAST() as Assignment),
+      where,
+    } satisfies UpdateStatement as ASTNode;
+  },
+
+  Assignment(column, _eq, value) {
+    return {
+      type: "assignment",
+      column: column.toAST() as string,
+      value: value.toAST() as WhereValue,
+    } satisfies Assignment as ASTNode;
   },
 
   SelectStatement(
@@ -825,7 +880,7 @@ semantics.addOperation<ASTNode>("toAST()", {
   },
 });
 
-export function parseSql(expr: string): Result<SelectStatement> {
+export function parseStatement(expr: string): Result<Statement> {
   const matchResult = grammar.match(expr);
   if (matchResult.failed()) {
     const [message] = matchResult.message.split("\nExpected");
@@ -836,11 +891,20 @@ export function parseSql(expr: string): Result<SelectStatement> {
     );
   }
   try {
-    return Ok(semantics(matchResult).toAST() as SelectStatement);
+    return Ok(semantics(matchResult).toAST() as Statement);
   } catch (e) {
     if (e instanceof SanitiseError) {
       return Err(e);
     }
     throw e;
   }
+}
+
+export function parseSql(expr: string): Result<SelectStatement> {
+  const res = parseStatement(expr);
+  if (!res.ok) return res;
+  if (res.data.type !== "select") {
+    return Err(new SanitiseError(`Expected SELECT statement, got ${res.data.type.toUpperCase()}`));
+  }
+  return Ok(res.data);
 }
